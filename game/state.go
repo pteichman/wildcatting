@@ -131,43 +131,45 @@ func completeTurn(drills []int) stateFn {
 
 		for p := 0; p < len(g.players); p++ {
 			move[p] = make(chan Move)
-			go func(p int) {
+			go func(playerID int) {
+				siteID := drills[p]
+				oil := g.f.oil[siteID]
+				deed := g.deeds[siteID]
 				for mv := range move[p] {
 					if mv.Done {
-						log.Printf("Player %d done drilling site %d", p, drills[p])
+						log.Printf("Player %d done drilling site %d", playerID, siteID)
 						break
 					}
-					deed := g.deeds[drills[p]]
 
-					log.Printf("Player %d drilling site %d with bit %d", p, drills[p], deed.bit)
+					log.Printf("Player %d drilling site %d with bit %d", playerID, siteID, deed.bit)
 					deed.start = g.week
 					deed.bit++
 
-					if g.f.oil[drills[p]] > 0 && deed.bit == g.f.oil[drills[p]] {
-						log.Printf("Player %d struck oil at depth %d", p, deed.bit)
+					if oil > 0 && deed.bit == oil {
+						log.Printf("Player %d struck oil at depth %d", playerID, deed.bit)
 						break
 					}
 					if deed.bit == maxOil {
-						log.Printf("DRY HOLE for player %d", p)
+						log.Printf("DRY HOLE for player %d", playerID)
 						break
 					}
 				}
 
-				for mv := range move[p] {
+				for mv := range move[playerID] {
 					if mv.Done {
-						log.Printf("Player %d done selling", mv.PlayerID)
+						log.Printf("Player %d done selling", playerID)
 						break
 					}
 					deed := g.deeds[mv.SiteID]
-					if deed == nil || deed.player != p {
-						log.Printf("Ignoring sale for site %d; player %d does not own deed", mv.SiteID, p)
+					if deed == nil || deed.player != playerID {
+						log.Printf("Ignoring sale for site %d; player %d does not own deed", mv.SiteID, playerID)
 						continue
 					}
 					if deed.stop > 0 {
 						log.Printf("Ignoring sale for site %d; already sold in week %d", mv.SiteID, deed.stop)
 						continue
 					}
-					log.Printf("Player %d selling site %d", mv.PlayerID, mv.SiteID)
+					log.Printf("Player %d selling site %d", playerID, mv.SiteID)
 					g.deeds[mv.SiteID].stop = g.week
 				}
 				wg.Done()
