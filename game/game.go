@@ -1,9 +1,6 @@
 package game
 
-import (
-	"fmt"
-	"math"
-)
+import "math"
 
 type Game interface {
 	Join(string) int
@@ -14,7 +11,6 @@ func (g *game) Join(name string) int {
 	// we probably need to lock the players slice
 	p := len(g.players)
 	g.players = append(g.players, name)
-	fmt.Printf("added %s as player %d\n", name, p)
 
 	return p
 }

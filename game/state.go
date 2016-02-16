@@ -26,9 +26,9 @@ type deed struct {
 }
 
 type Move struct {
-	PlayerID int  `json:"player"`
-	SiteID   int  `json:"site"`
-	Done     bool `json:"done"`
+	PlayerID int
+	SiteID   int
+	Done     bool
 }
 
 type stateFn func(*game) stateFn
@@ -71,12 +71,19 @@ func lobby(g *game) stateFn {
 	// wait for player zero to start the game
 	for {
 		mv := <-g.move
-		if mv.PlayerID == 0 && mv.Done {
-			break
+
+		if mv.PlayerID != 0 {
+			log.Printf("Game has not started; ignoring non-owner player %d", mv.PlayerID)
+			continue
 		}
+		if !mv.Done {
+			log.Println("Game has not started; owner must send Done=true")
+			continue
+		}
+		break
 	}
 
-	fmt.Printf("started game with %d players\n", len(g.players))
+	log.Printf("Owner started game with %d players", len(g.players))
 
 	return survey
 }
@@ -87,19 +94,30 @@ func survey(g *game) stateFn {
 
 	drills := make([]int, 4)
 
+	// eek realizing that his is unnecessarily synchronous...
+	// while it is true that that the surveying must happen in order
+	// once a player has surveyed they should immediately be able to
+	// start drilling. waiting for all players to finish surveying
+	// shouldn't be necessary. seems like completeTurn state is going
+	// to go away which would bring us down to just two game states :/
 	for p := 0; p < len(g.players); p++ {
 		for {
 			mv := <-g.move
 			if mv.PlayerID != p {
-				log.Printf("waiting for player %d to survey; ignoring player %d", p, mv.PlayerID)
+				log.Printf("Waiting for player %d to survey; ignoring player %d", p, mv.PlayerID)
 				continue
 			}
-			fmt.Printf("player %d surveying site %d\n", p, mv.SiteID)
+			if _, ok := g.deeds[mv.SiteID]; ok {
+				log.Printf("Site %d already surveyed; ignoring player %d", mv.SiteID, p)
+				continue
+			}
+			log.Printf("Player %d surveying site %d", p, mv.SiteID)
 			g.deeds[mv.SiteID] = &deed{player: p}
 			drills[p] = mv.SiteID
 			break
 		}
 	}
+	log.Printf("All %d players finished surveying", len(g.players))
 	// return a state transition based on the location of the drills
 	return completeTurn(drills)
 }
@@ -116,24 +134,40 @@ func completeTurn(drills []int) stateFn {
 			go func(p int) {
 				for mv := range move[p] {
 					if mv.Done {
-						fmt.Printf("player %d done drilling site %d\n", p, drills[p])
+						log.Printf("Player %d done drilling site %d", p, drills[p])
 						break
 					}
-					fmt.Printf("player %d drilling site %d\n", p, drills[p])
 					deed := g.deeds[drills[p]]
+
+					log.Printf("Player %d drilling site %d with bit %d", p, drills[p], deed.bit)
 					deed.start = g.week
 					deed.bit++
-					if deed.bit == g.f.oil[drills[p]] || deed.bit == maxOil {
+
+					if g.f.oil[drills[p]] > 0 && deed.bit == g.f.oil[drills[p]] {
+						log.Printf("Player %d struck oil at depth %d", p, deed.bit)
+						break
+					}
+					if deed.bit == maxOil {
+						log.Printf("DRY HOLE for player %d", p)
 						break
 					}
 				}
 
 				for mv := range move[p] {
 					if mv.Done {
-						fmt.Printf("player %d done selling\n", mv.PlayerID)
+						log.Printf("Player %d done selling", mv.PlayerID)
 						break
 					}
-					fmt.Printf("player %d selling site %d\n", mv.PlayerID, mv.SiteID)
+					deed := g.deeds[mv.SiteID]
+					if deed == nil || deed.player != p {
+						log.Printf("Ignoring sale for site %d; player %d does not own deed", mv.SiteID, p)
+						continue
+					}
+					if deed.stop > 0 {
+						log.Printf("Ignoring sale for site %d; already sold in week %d", mv.SiteID, deed.stop)
+						continue
+					}
+					log.Printf("Player %d selling site %d", mv.PlayerID, mv.SiteID)
 					g.deeds[mv.SiteID].stop = g.week
 				}
 				wg.Done()
@@ -153,6 +187,7 @@ func completeTurn(drills []int) stateFn {
 		}()
 		wg.Wait()
 		close(done)
+		log.Printf("All %d players completed week %d turn", len(g.players), g.week)
 
 		// FIXME generate player game state here, right?
 		// actually i think maybe it's on demand via Stater interface and the state channel goes away.

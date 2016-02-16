@@ -25,11 +25,13 @@ func NewField() fmt.Stringer {
 }
 
 func newField() *field {
+	p := fill(1+rand.Intn(4), minP, maxP, 0.05, 0.25)
+	oil := probFilter(fill(1, minOil, maxOil, 0.1, 0.5), p)
+
 	return &field{
-		// fill params: peaks, min, max, decay, fuzz
-		p:    fill(1+rand.Intn(4), minP, maxP, 0.05, 0.25),      // a few well formed peaks
+		p:    p,                                                 // a few well formed peaks
 		cost: fill(5+rand.Intn(5), minCost, maxCost, 0.1, 0.25), // many chaotic peaks
-		oil:  fill(1, minOil, maxOil, 0.1, 0.5),                 // hardship
+		oil:  oil,                                               // hardship
 		tax:  fill(10+rand.Intn(10), minTax, maxTax, 0.1, 0.5),  // local politics
 	}
 }
@@ -88,6 +90,17 @@ func fill(n, min, max int, decay, fuzz float64) []int {
 	}
 
 	return values
+}
+
+func probFilter(vals, p []int) []int {
+	filtered := make([]int, len(vals))
+	for i, v := range vals {
+		if rand.Intn(100) > p[i] {
+			continue
+		}
+		filtered[i] = v
+	}
+	return filtered
 }
 
 // String returns the oil field as a string.

@@ -73,7 +73,7 @@ func (h *handler) postGame(w http.ResponseWriter, r *http.Request) {
 	log.Println("Created game", gameID)
 }
 
-// join/start game
+// join game
 func (h *handler) postGameID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	gameID, _ := strconv.Atoi(vars["gid"])
@@ -91,7 +91,7 @@ func (h *handler) postGameID(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	log.Println("Created game", gameID)
+	log.Printf("\"%s\" joined game %d as player %d", name, gameID, playerID)
 }
 
 func (h *handler) postPlayerID(w http.ResponseWriter, r *http.Request) {
