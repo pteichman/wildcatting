@@ -43,7 +43,7 @@ func (h *handler) newRouter() *mux.Router {
 		route{"POST", "/game/", h.postGame},
 		route{"POST", "/game/{gid:[0-9]+}/", h.postGameID},
 		route{"POST", "/game/{gid:[0-9]+}/player/{pid:[0-9]}/", h.postPlayerID},
-		route{"GET", "/game/{gid:[0-9]+}/player/{pid}:[0-9]/", h.getPlayerID},
+		route{"GET", "/game/{gid:[0-9]+}/player/{pid:[0-9]}/", h.getPlayerID},
 	}
 
 	r := mux.NewRouter()
