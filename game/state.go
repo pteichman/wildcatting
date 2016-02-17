@@ -1,7 +1,6 @@
 package game
 
 import (
-	"fmt"
 	"log"
 	"math/rand"
 	"sync"
@@ -14,6 +13,7 @@ type game struct {
 	deeds   map[int]*deed // site id to ownership record
 	price   []int         // oil price each week in cents
 	players []string      // id indexed player names
+	turn    int           // next surveying turn (which much happens in order)
 	move    <-chan Move
 	state   chan<- bool
 }
@@ -53,13 +53,6 @@ func New(move <-chan Move) (Game, <-chan bool) {
 func (g *game) run() {
 	for state := lobby; state != nil; {
 		state = state(g)
-
-		select {
-		case g.state <- true:
-			fmt.Println("someone cares")
-		default:
-			fmt.Println("noone cares")
-		}
 	}
 	close(g.state)
 }
@@ -85,116 +78,116 @@ func lobby(g *game) stateFn {
 
 	log.Printf("Owner started game with %d players", len(g.players))
 
-	return survey
+	return week
 }
 
-func survey(g *game) stateFn {
+func week(g *game) stateFn {
 	g.week++
 	g.price = append(g.price, g.price[len(g.price)-1])
 
-	drills := make([]int, 4)
+	var wg sync.WaitGroup
+	wg.Add(len(g.players))
 
-	// eek realizing that his is unnecessarily synchronous...
-	// while it is true that that the surveying must happen in order
-	// once a player has surveyed they should immediately be able to
-	// start drilling. waiting for all players to finish surveying
-	// shouldn't be necessary. seems like completeTurn state is going
-	// to go away which would bring us down to just two game states :/
+	var move []chan Move
 	for p := 0; p < len(g.players); p++ {
-		for {
-			mv := <-g.move
-			if mv.PlayerID != p {
-				log.Printf("Waiting for player %d to survey; ignoring player %d", p, mv.PlayerID)
-				continue
+		move = append(move, make(chan Move))
+		go func(playerID int) {
+			for state := surveyTurn; state != nil; {
+				state = state(g, move[playerID])
 			}
-			if _, ok := g.deeds[mv.SiteID]; ok {
-				log.Printf("Site %d already surveyed; ignoring player %d", mv.SiteID, p)
-				continue
-			}
-			log.Printf("Player %d surveying site %d", p, mv.SiteID)
-			g.deeds[mv.SiteID] = &deed{player: p}
-			drills[p] = mv.SiteID
-			break
-		}
+			wg.Done()
+		}(p)
 	}
-	log.Printf("All %d players finished surveying", len(g.players))
-	// return a state transition based on the location of the drills
-	return completeTurn(drills)
+
+	done := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case mv := <-g.move:
+				move[mv.PlayerID] <- mv
+			case <-done:
+				return
+			}
+		}
+	}()
+	wg.Wait()
+	close(done)
+	log.Printf("All %d players completed week %d", len(g.players), g.week)
+
+	if g.week == 13 {
+		log.Println("Game over!")
+		return nil
+	}
+	return week
 }
 
-func completeTurn(drills []int) stateFn {
-	return func(g *game) stateFn {
-		var wg sync.WaitGroup
-		wg.Add(len(g.players))
+type playerTurn func(g *game, move <-chan Move) playerTurn
 
-		move := make([]chan Move, len(g.players))
+func surveyTurn(g *game, move <-chan Move) playerTurn {
+	for {
+		mv := <-move
 
-		for p := 0; p < len(g.players); p++ {
-			move[p] = make(chan Move)
-			go func(playerID int) {
-				siteID := drills[p]
-				oil := g.f.oil[siteID]
-				deed := g.deeds[siteID]
-				for mv := range move[p] {
-					if mv.Done {
-						log.Printf("Player %d done drilling site %d", playerID, siteID)
-						break
-					}
-
-					log.Printf("Player %d drilling site %d with bit %d", playerID, siteID, deed.bit)
-					deed.start = g.week
-					deed.bit++
-
-					if oil > 0 && deed.bit == oil {
-						log.Printf("Player %d struck oil at depth %d", playerID, deed.bit)
-						break
-					}
-					if deed.bit == maxOil {
-						log.Printf("DRY HOLE for player %d", playerID)
-						break
-					}
-				}
-
-				for mv := range move[playerID] {
-					if mv.Done {
-						log.Printf("Player %d done selling", playerID)
-						break
-					}
-					deed := g.deeds[mv.SiteID]
-					if deed == nil || deed.player != playerID {
-						log.Printf("Ignoring sale for site %d; player %d does not own deed", mv.SiteID, playerID)
-						continue
-					}
-					if deed.stop > 0 {
-						log.Printf("Ignoring sale for site %d; already sold in week %d", mv.SiteID, deed.stop)
-						continue
-					}
-					log.Printf("Player %d selling site %d", playerID, mv.SiteID)
-					g.deeds[mv.SiteID].stop = g.week
-				}
-				wg.Done()
-			}(p)
+		if mv.PlayerID != g.turn {
+			log.Printf("Waiting for player %d to survey; ignoring player %d", g.turn, mv.PlayerID)
+			continue
 		}
 
-		done := make(chan struct{})
-		go func() {
-			for {
-				select {
-				case mv := <-g.move:
-					move[mv.PlayerID] <- mv
-				case <-done:
-					return
-				}
-			}
-		}()
-		wg.Wait()
-		close(done)
-		log.Printf("All %d players completed week %d turn", len(g.players), g.week)
+		if _, ok := g.deeds[mv.SiteID]; ok {
+			log.Printf("Site %d already surveyed; ignoring player %d", mv.SiteID, mv.PlayerID)
+			continue
+		}
 
-		// FIXME generate player game state here, right?
-		// actually i think maybe it's on demand via Stater interface and the state channel goes away.
-		// however, if there is long polling maybe there is an event channel from game that feeds it.
-
-		return survey
+		log.Printf("Player %d surveying site %d", mv.PlayerID, mv.SiteID)
+		g.deeds[mv.SiteID] = &deed{player: mv.PlayerID}
+		g.turn = (g.turn + 1) % len(g.players)
+		return drillTurn(mv.SiteID)
 	}
+}
+
+func drillTurn(siteID int) playerTurn {
+	return func(g *game, move <-chan Move) playerTurn {
+		oil := g.f.oil[siteID]
+		deed := g.deeds[siteID]
+		for mv := range move {
+			if mv.Done {
+				log.Printf("Player %d done drilling site %d", mv.PlayerID, siteID)
+				break
+			}
+
+			log.Printf("Player %d drilling site %d with bit %d", mv.PlayerID, siteID, deed.bit)
+			deed.start = g.week
+			deed.bit++
+
+			if oil > 0 && deed.bit == oil {
+				log.Printf("Player %d struck oil at depth %d", mv.PlayerID, deed.bit)
+				break
+			}
+			if deed.bit == maxOil {
+				log.Printf("DRY HOLE for player %d", mv.PlayerID)
+				break
+			}
+		}
+		return sellTurn
+	}
+}
+
+func sellTurn(g *game, move <-chan Move) playerTurn {
+	for mv := range move {
+		if mv.Done {
+			log.Printf("Player %d done selling", mv.PlayerID)
+			break
+		}
+		deed := g.deeds[mv.SiteID]
+		if deed == nil || deed.player != mv.PlayerID {
+			log.Printf("Ignoring sale for site %d; player %d does not own deed", mv.SiteID, mv.PlayerID)
+			continue
+		}
+		if deed.stop > 0 {
+			log.Printf("Ignoring sale for site %d; already sold in week %d", mv.SiteID, deed.stop)
+			continue
+		}
+		log.Printf("Player %d selling site %d", mv.PlayerID, mv.SiteID)
+		g.deeds[mv.SiteID].stop = g.week
+	}
+	return nil
 }
