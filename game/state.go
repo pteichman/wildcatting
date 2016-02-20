@@ -137,7 +137,7 @@ func survey(g *game, move <-chan Move) playerFn {
 		g.turn = (g.turn + 1) % len(g.players)
 
 		update := SurveyUpdate{
-			Prob: g.f.p[mv.SiteID],
+			Prob: g.f.prob[mv.SiteID],
 			Cost: g.f.cost[mv.SiteID],
 			Tax:  g.f.tax[mv.SiteID],
 		}

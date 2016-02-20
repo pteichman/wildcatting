@@ -97,7 +97,7 @@ func (g *game) View(playerID int) *View {
 		ps := Deed{
 			SiteID: s,
 			Owner:  deed.player,
-			Prob:   g.f.p[s],
+			Prob:   g.f.prob[s],
 			Cost:   g.f.cost[s],
 			Tax:    g.f.tax[s],
 		}

@@ -20,7 +20,7 @@ type testWeek struct {
 
 var _tg = testGame{
 	f: &field{
-		p:    make([]int, 24*80),
+		prob: make([]int, 24*80),
 		cost: make([]int, 24*80),
 		oil:  make([]int, 24*80),
 		tax:  make([]int, 24*80),
@@ -47,7 +47,7 @@ var _tg = testGame{
 
 var tg = testGame{
 	f: &field{
-		p:    make([]int, 24*80),
+		prob: make([]int, 24*80),
 		cost: make([]int, 24*80),
 		oil:  make([]int, 24*80),
 		tax:  make([]int, 24*80),

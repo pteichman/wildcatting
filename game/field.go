@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	minP    = 1
-	maxP    = 100
+	minProb = 1
+	maxProb = 100
 	minOil  = 1
 	maxOil  = 9
 	minCost = 1
@@ -18,18 +18,18 @@ const (
 	maxTax  = 550
 )
 
-type field struct{ p, cost, oil, tax []int }
+type field struct{ prob, cost, oil, tax []int }
 
 func NewField() fmt.Stringer {
 	return newField()
 }
 
 func newField() *field {
-	p := fill(1+rand.Intn(4), minP, maxP, 0.05, 0.25)
-	oil := probFilter(fill(1, minOil, maxOil, 0.1, 0.5), p)
+	prob := fill(1+rand.Intn(4), minProb, maxProb, 0.05, 0.25)
+	oil := probFilter(fill(1, minOil, maxOil, 0.1, 0.5), prob)
 
 	return &field{
-		p:    p,                                                 // a few well formed peaks
+		prob: prob,                                              // a few well formed peaks
 		cost: fill(5+rand.Intn(5), minCost, maxCost, 0.1, 0.25), // many chaotic peaks
 		oil:  oil,                                               // hardship
 		tax:  fill(10+rand.Intn(10), minTax, maxTax, 0.1, 0.5),  // local politics
@@ -113,13 +113,13 @@ func (f *field) String() string {
 			buf.WriteByte('\n')
 		}
 		buf.WriteString("\033[1;")
-		if f.p[s] > 90 {
+		if f.prob[s] > 90 {
 			buf.WriteString("31")
-		} else if f.p[s] > 80 {
+		} else if f.prob[s] > 80 {
 			buf.WriteString("32")
-		} else if f.p[s] > 60 {
+		} else if f.prob[s] > 60 {
 			buf.WriteString("34")
-		} else if f.p[s] > 20 {
+		} else if f.prob[s] > 20 {
 			buf.WriteString("36")
 		} else {
 			buf.WriteString("28")
@@ -176,6 +176,3 @@ func (f *field) reservoir(s int) <-chan int {
 	}(f.oil[s])
 	return out
 }
-
-// FIXME and can we calculate revenue on demand by considering history (week bought/sold)?
-// we'd have to keep an oil price history list. price []int
