@@ -60,24 +60,24 @@ var tg = testGame{
 			sells:   [][]int{{13}, {}, {}, {}},
 		},
 		testWeek{
-			surveys: []int{12, 41, 36, 1913},
+			surveys: []int{12, 33, 36, 1913},
 			drills:  []int{3, 5, 0, 0},
-			sells:   [][]int{{12}, {41}, {}, {}},
+			sells:   [][]int{{12}, {33}, {}, {}},
 		},
 		testWeek{
 			surveys: []int{11, 30, 35, 300},
 			drills:  []int{0, 0, 5, 5},
-			sells:   [][]int{{}, {}, {}, {}, {}},
+			sells:   [][]int{{}, {}, {}, {}},
 		},
 		testWeek{
 			surveys: []int{21, 40, 45, 400},
 			drills:  []int{9, 9, 9, 9},
-			sells:   [][]int{{}, {}, {}, {}, {}},
+			sells:   [][]int{{}, {}, {}, {}},
 		},
 		testWeek{
 			surveys: []int{31, 50, 55, 500},
 			drills:  []int{9, 9, 9, 9},
-			sells:   [][]int{{}, {}, {}, {}, {}},
+			sells:   [][]int{{}, {}, {}, {}},
 		},
 		testWeek{
 			surveys: []int{41, 60, 65, 600},
@@ -88,11 +88,7 @@ var tg = testGame{
 }
 
 func TestGame(t *testing.T) {
-	move := make(chan Move)
-
-	// cheat in order to test internal representations
-	gm, _ := New(move)
-	g := gm.(*game)
+	g := New().(*game)
 	g.f = tg.f
 
 	for p, name := range tg.joins {
@@ -108,10 +104,11 @@ func TestGame(t *testing.T) {
 	}
 
 	// start the game
-	move <- Move{Done: true}
-	time.Sleep(time.Millisecond)
+	g.Move(Move{Done: true})
 
 	for i, tw := range tg.weeks {
+		time.Sleep(time.Millisecond)
+
 		w := i + 1
 
 		if g.week != w {
@@ -122,8 +119,7 @@ func TestGame(t *testing.T) {
 		// surveys
 		for p, s := range tw.surveys {
 			fmt.Printf("move <- Move{PlayerID: %d, SiteID: %d}\n", p, s)
-			move <- Move{PlayerID: p, SiteID: s}
-			time.Sleep(time.Millisecond)
+			g.Move(Move{PlayerID: p, SiteID: s})
 
 		}
 
@@ -140,8 +136,7 @@ func TestGame(t *testing.T) {
 			var oil bool
 			for i := 0; i < n; i++ {
 				fmt.Printf("move <- Move{PlayerID: %d,}\n", p)
-				move <- Move{PlayerID: p}
-				time.Sleep(time.Millisecond)
+				g.Move(Move{PlayerID: p})
 
 				if n == g.f.oil[s] {
 					oil = true
@@ -151,7 +146,7 @@ func TestGame(t *testing.T) {
 
 			if !oil && n < maxOil {
 				fmt.Printf("move <- Move{PlayerID: %d, Done: true}\n", p)
-				move <- Move{PlayerID: p, Done: true}
+				g.Move(Move{PlayerID: p, Done: true})
 			}
 
 			if g.deeds[s].bit != n {
@@ -167,8 +162,7 @@ func TestGame(t *testing.T) {
 		for p, sells := range tw.sells {
 			for _, s := range sells {
 				fmt.Printf("move <- Move{PlayerID: %d, SiteID: %d}\n", p, s)
-				move <- Move{PlayerID: p, SiteID: s}
-				time.Sleep(time.Millisecond)
+				g.Move(Move{PlayerID: p, SiteID: s})
 
 				if g.deeds[s].stop != g.week {
 					t.Errorf("selling (week %d player %d site %d): expect stop %d; got %d", g.week, p, s, g.week, g.deeds[s].stop)
@@ -176,8 +170,8 @@ func TestGame(t *testing.T) {
 			}
 
 			fmt.Printf("move <- Move{PlayerID: %d, Done: true}\n", p)
-			move <- Move{PlayerID: p, Done: true}
-			time.Sleep(time.Millisecond)
+			g.Move(Move{PlayerID: p, Done: true})
+
 		}
 	}
 }

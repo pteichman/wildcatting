@@ -4,21 +4,33 @@ import "math"
 
 type Game interface {
 	Join(string) int
-	State(int) *PlayerState
+	Move(Move) Update
+	State(int) *State
 }
+
+type Update interface{}
 
 func (g *game) Join(name string) int {
 	// we probably need to lock the players slice
 	p := len(g.players)
 	g.players = append(g.players, name)
 
+	g.update = append(g.update, make(chan Update))
+
 	return p
 }
 
-func (g *game) State(playerID int) *PlayerState {
-	var sites []PlayerSite
+func (g *game) Move(mv Move) Update {
+	// should g.move also be a player id indexed slice?
+	g.move <- mv
+
+	return <-g.update[mv.PlayerID]
+}
+
+func (g *game) State(playerID int) *State {
+	var sites []Site
 	for s, deed := range g.deeds {
-		ps := PlayerSite{
+		ps := Site{
 			ID:    s,
 			Owner: deed.player,
 			P:     g.f.p[s],
@@ -32,13 +44,6 @@ func (g *game) State(playerID int) *PlayerState {
 
 		sites = append(sites, ps)
 	}
-
-	// var waiting []int
-	// for p, play := range g.play {
-	// 	if play != nil {
-	// 		waiting = append(waiting, p)
-	// 	}
-	// }
 
 	wellRev := make(map[int]int)
 	for s, deed := range g.deeds {
@@ -72,11 +77,11 @@ func (g *game) State(playerID int) *PlayerState {
 		revenue[g.deeds[s].player] += rev
 	}
 
-	return &PlayerState{
+	return &State{
 		Players: g.players,
+		Week:    g.week,
 		Sites:   sites,
 		Revenue: revenue,
-		// Waiting: waiting,
 	}
 }
 
@@ -115,7 +120,7 @@ func (g *game) pressure(res []int) []float64 {
 		pressure = append(pressure, tot/float64(len(res)))
 	}
 
-	// FIXME aquifiers would need to be rolled into the previous loop,
+	// FIXME aquafiers would need to be rolled into the previous loop,
 	// counteracting the pressure decreases as pumping continue. this should be
 	// tuned so without strong aquifiers, pressure reductions are devastating
 
@@ -133,10 +138,7 @@ func (g *game) pressure(res []int) []float64 {
 	return pressure
 }
 
-// FIXME maybe we can put json tags on "game" (becomes GameState) and serialize that
-// although we'd have to have a function which copies the available state for a given player
-// so not sure if a new GameState simplifies anything
-type PlayerSite struct {
+type Site struct {
 	ID    int `json:"id"`
 	P     int `json:"p"`
 	Cost  int `json:"cost"`
@@ -145,9 +147,9 @@ type PlayerSite struct {
 	Owner int `json:"owner"`
 }
 
-type PlayerState struct {
-	Players []string     `json:"players"`
-	Sites   []PlayerSite `json:"sites"`
-	Revenue []int        `json:"revenue"`
-	Waiting []int        `json:"waiting"`
+type State struct {
+	Week    int      `json:"week"`
+	Players []string `json:"players"`
+	Sites   []Site   `json:"sites"`
+	Revenue []int    `json:"revenue"`
 }

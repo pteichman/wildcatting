@@ -61,10 +61,8 @@ func (h *handler) newRouter() *mux.Router {
 func (h *handler) postGame(w http.ResponseWriter, r *http.Request) {
 	gameID := len(h.games)
 
-	move := make(chan game.Move)
-	g, _ := game.New(move)
+	g := game.New()
 	h.games = append(h.games, g)
-	h.move = append(h.move, move)
 
 	if _, err := w.Write([]byte(fmt.Sprintf("%d", gameID))); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -94,6 +92,12 @@ func (h *handler) postGameID(w http.ResponseWriter, r *http.Request) {
 	log.Printf("\"%s\" joined game %d as player %d", name, gameID, playerID)
 }
 
+// move making... starting, surveying, drilling, selling
+//
+// start -> week
+// survey -> probability, tax, cost
+// drill -> bit, wet
+// selling -> well revenue
 func (h *handler) postPlayerID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	gameID, _ := strconv.Atoi(vars["gid"])
@@ -107,7 +111,16 @@ func (h *handler) postPlayerID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.move[gameID] <- game.Move{playerID, mv.SiteID, mv.Done}
+	g := h.games[gameID]
+	update := g.Move(game.Move{playerID, mv.SiteID, mv.Done})
+
+	js, err := json.Marshal(update)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
 }
 
 func (h *handler) getPlayerID(w http.ResponseWriter, r *http.Request) {
