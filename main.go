@@ -134,7 +134,7 @@ func (h *handler) getPlayerID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	state := g.State(playerID)
+	state := g.View(playerID)
 
 	js, err := json.Marshal(state)
 	if err != nil {

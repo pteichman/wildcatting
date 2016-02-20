@@ -2,70 +2,50 @@ package game
 
 import (
 	"log"
-	"math/rand"
 	"sync"
-	"time"
 )
 
-type game struct {
-	f       *field
-	week    int
-	deeds   map[int]*deed // site id to ownership record
-	price   []int         // oil price each week in cents
-	players []string      // id indexed player names
-	turn    int           // next surveying turn (which much happens in order)
-
-	// if update is a slice indexed by player move probably shoud be too..
-	move   chan Move
-	update []chan Update
-}
-
-type deed struct {
-	player int
-	start  int
-	stop   int
-	bit    int
-}
-
-type Move struct {
-	PlayerID int
-	SiteID   int
-	Done     bool
-}
-
+// JoinUpdate is a JSON serializable update containing the result of a join Move.
 type JoinUpdate struct {
 	PlayerID int
 }
 
-type stateFn func(*game) stateFn
-
-func New() Game {
-	rand.Seed(time.Now().UTC().UnixNano())
-
-	g := &game{
-		f:     newField(),
-		deeds: make(map[int]*deed),
-		price: []int{85 + rand.Intn(30)}, // $0.85 - $1.15
-		move:  make(chan Move),
-	}
-
-	go g.run()
-	return g
-}
-
-func (g *game) run() {
-	for state := lobby; state != nil; {
-		state = state(g)
-	}
-}
-
+// StartUpdate is a JSON serializable Update containing the result of a game start Move.
 type StartUpdate struct {
 	Players []string `json:"players"`
 }
 
+// SurveyUpdate is a JSON serializable Update containing the result of a survey Move.
+type SurveyUpdate struct {
+	Prob int `json:"prob"`
+	Cost int `json:"cost"`
+	Tax  int `json:"tax"`
+}
+
+// DrillUpdate is a JSON serializable Update containing the result of a drill Move.
+type DrillUpdate struct {
+	Depth int  `json:"depth"`
+	Cost  int  `json:"cost"`
+	Oil   bool `json:"oil"`
+}
+
+// SellUpdate is a JSON serializable Update container the result of a sell Move.
+type SellUpdate struct {
+	Cost int `json:"cost"`
+}
+
+// game state machine func
+type stateFn func(*game) stateFn
+
+// player turn state machine func
+type playerFn func(g *game, move <-chan Move) playerFn
+
+// lobby is the game state machine function for handling
+// joins before the start of the game.
 func lobby(g *game) stateFn {
-	// FIXME maybe we should go to the lobby every round (showing score summary) but giving a chance for last joins to come in...
-	// "start" then really becomes "begin week" and i guess the game owner would be responsible for it.
+	// FIXME maybe we should go to the lobby every round (showing score summary)
+	// giving a chance for late joins to come in... "start" then becomes
+	// "begin week" and i guess the game owner would be responsible for it
 
 	// wait for player zero to start the game
 	for {
@@ -90,23 +70,26 @@ func lobby(g *game) stateFn {
 	return week
 }
 
+// week is the game state machine function for handling a single week's gameplay.
 func week(g *game) stateFn {
 	g.price = append(g.price, g.price[len(g.price)-1])
 
 	var wg sync.WaitGroup
 	wg.Add(len(g.players))
 
+	// run a state machine for each player in individual go routines
 	var move []chan Move
 	for p := 0; p < len(g.players); p++ {
 		move = append(move, make(chan Move))
 		go func(playerID int) {
-			for state := surveyTurn; state != nil; {
+			for state := survey; state != nil; {
 				state = state(g, move[playerID])
 			}
 			wg.Done()
 		}(p)
 	}
 
+	// direct incoming Moves to a player specific channel
 	done := make(chan struct{})
 	go func() {
 		for {
@@ -132,15 +115,8 @@ func week(g *game) stateFn {
 	return week
 }
 
-type playerTurn func(g *game, move <-chan Move) playerTurn
-
-type SurveyUpdate struct {
-	Prob int `json:"prob"`
-	Cost int `json:"cost"`
-	Tax  int `json:"tax"`
-}
-
-func surveyTurn(g *game, move <-chan Move) playerTurn {
+// survey is a player state machine function for handling player survey moves.
+func survey(g *game, move <-chan Move) playerFn {
 	for {
 		mv := <-move
 
@@ -167,18 +143,13 @@ func surveyTurn(g *game, move <-chan Move) playerTurn {
 		}
 		g.update[mv.PlayerID] <- update
 
-		return drillTurn(mv.SiteID)
+		return drillSite(mv.SiteID)
 	}
 }
 
-type DrillUpdate struct {
-	Depth int  `json:"depth"`
-	Cost  int  `json:"cost"`
-	Oil   bool `json:"oil"`
-}
-
-func drillTurn(siteID int) playerTurn {
-	return func(g *game, move <-chan Move) playerTurn {
+// drill returns a player state machine function for drilling a specific site
+func drillSite(siteID int) playerFn {
+	return func(g *game, move <-chan Move) playerFn {
 		oil := g.f.oil[siteID]
 		deed := g.deeds[siteID]
 		for mv := range move {
@@ -207,15 +178,13 @@ func drillTurn(siteID int) playerTurn {
 			}
 			g.update[mv.PlayerID] <- update
 		}
-		return sellTurn
+		return sell
 	}
 }
 
-type SellUpdate struct {
-	Cost int `json:"cost"`
-}
-
-func sellTurn(g *game, move <-chan Move) playerTurn {
+// sell is a player state machine function for handling sales
+// of wells before the end of the turn
+func sell(g *game, move <-chan Move) playerFn {
 	for mv := range move {
 		if mv.Done {
 			log.Printf("Player %d done selling", mv.PlayerID)

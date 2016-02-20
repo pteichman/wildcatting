@@ -1,14 +1,79 @@
 package game
 
-import "math"
+import (
+	"math"
+	"math/rand"
+	"time"
+)
 
 type Game interface {
 	Join(string) int
 	Move(Move) Update
-	State(int) *State
+	View(int) *View
 }
 
+// Update is a JSON serializable update containing the result to a player Move.
 type Update interface{}
+
+type Move struct {
+	PlayerID int
+	SiteID   int
+	Done     bool
+}
+
+type View struct {
+	Week    int      `json:"week"`
+	Players []string `json:"players"`
+	Deeds   []Deed   `json:"deeds"`
+	Revenue []int    `json:"revenue"`
+}
+
+type Deed struct {
+	SiteID int `json:"site"`
+	Prob   int `json:"prob"`
+	Cost   int `json:"cost"`
+	Oil    int `json:"oil"`
+	Tax    int `json:"tax"`
+	Owner  int `json:"owner"`
+}
+
+type game struct {
+	f       *field
+	week    int
+	deeds   map[int]*deed // site id to ownership record
+	price   []int         // oil price each week in cents
+	players []string      // id indexed player names
+	turn    int           // next surveying turn (which much happens in order)
+	move    chan Move
+	update  []chan Update
+}
+
+type deed struct {
+	player int
+	start  int
+	stop   int
+	bit    int
+}
+
+func New() Game {
+	rand.Seed(time.Now().UTC().UnixNano())
+
+	g := &game{
+		f:     newField(),
+		deeds: make(map[int]*deed),
+		price: []int{85 + rand.Intn(30)}, // $0.85 - $1.15
+		move:  make(chan Move),
+	}
+
+	go g.run()
+	return g
+}
+
+func (g *game) run() {
+	for state := lobby; state != nil; {
+		state = state(g)
+	}
+}
 
 func (g *game) Join(name string) int {
 	// we probably need to lock the players slice
@@ -21,28 +86,27 @@ func (g *game) Join(name string) int {
 }
 
 func (g *game) Move(mv Move) Update {
-	// should g.move also be a player id indexed slice?
 	g.move <- mv
-
 	return <-g.update[mv.PlayerID]
 }
 
-func (g *game) State(playerID int) *State {
-	var sites []Site
+// View returns a players' View of the oil field state.
+func (g *game) View(playerID int) *View {
+	var deeds []Deed
 	for s, deed := range g.deeds {
-		ps := Site{
-			ID:    s,
-			Owner: deed.player,
-			P:     g.f.p[s],
-			Cost:  g.f.cost[s],
-			Tax:   g.f.tax[s],
+		ps := Deed{
+			SiteID: s,
+			Owner:  deed.player,
+			Prob:   g.f.p[s],
+			Cost:   g.f.cost[s],
+			Tax:    g.f.tax[s],
 		}
 		// players only know about oil if it was reached with the bit
 		if deed.bit > 0 && deed.bit == g.f.oil[s] {
 			ps.Oil = g.f.oil[s]
 		}
 
-		sites = append(sites, ps)
+		deeds = append(deeds, ps)
 	}
 
 	wellRev := make(map[int]int)
@@ -77,10 +141,10 @@ func (g *game) State(playerID int) *State {
 		revenue[g.deeds[s].player] += rev
 	}
 
-	return &State{
+	return &View{
 		Players: g.players,
 		Week:    g.week,
-		Sites:   sites,
+		Deeds:   deeds,
 		Revenue: revenue,
 	}
 }
@@ -136,20 +200,4 @@ func (g *game) pressure(res []int) []float64 {
 	// the average value within the well’s effective drainage volume
 
 	return pressure
-}
-
-type Site struct {
-	ID    int `json:"id"`
-	P     int `json:"p"`
-	Cost  int `json:"cost"`
-	Oil   int `json:"oil"`
-	Tax   int `json:"tax"`
-	Owner int `json:"owner"`
-}
-
-type State struct {
-	Week    int      `json:"week"`
-	Players []string `json:"players"`
-	Sites   []Site   `json:"sites"`
-	Revenue []int    `json:"revenue"`
 }
