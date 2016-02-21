@@ -2,6 +2,7 @@ package game
 
 import (
 	"log"
+	"math/rand"
 	"sync"
 )
 
@@ -12,7 +13,12 @@ type JoinUpdate struct {
 
 // StartUpdate is a JSON serializable Update containing the result of a game start Move.
 type StartUpdate struct {
-	Players []string `json:"players"`
+	Week int    `json:"week"`
+	Prob []int  `json:"prob"`
+	Cost []int  `json:"cost"`
+	Tax  []int  `json:"tax"`
+	Oil  []int  `json:"oil"`
+	Fact string `json:"fact"`
 }
 
 // SurveyUpdate is a JSON serializable Update containing the result of a survey Move.
@@ -63,7 +69,15 @@ func lobby(g *game) stateFn {
 		}
 		log.Printf("Owner started game with %d players", len(g.players))
 		g.week++
-		g.update[mv.PlayerID] <- &StartUpdate{Players: g.players}
+		update := &StartUpdate{
+			Week: g.week,
+			Prob: g.f.prob,
+			Cost: g.f.cost,
+			Tax:  g.f.tax,
+			Oil:  g.f.oil,
+			Fact: facts[rand.Intn(len(facts))],
+		}
+		g.update[mv.PlayerID] <- update
 		break
 	}
 

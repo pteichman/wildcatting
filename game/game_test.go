@@ -18,33 +18,6 @@ type testWeek struct {
 	sells   [][]int
 }
 
-var _tg = testGame{
-	f: &field{
-		prob: make([]int, 24*80),
-		cost: make([]int, 24*80),
-		oil:  make([]int, 24*80),
-		tax:  make([]int, 24*80),
-	},
-	joins: []string{"bob"},
-	weeks: []testWeek{
-		testWeek{
-			surveys: []int{13},
-			drills:  []int{3},
-			sells:   [][]int{{13}},
-		},
-		testWeek{
-			surveys: []int{12},
-			drills:  []int{3},
-			sells:   [][]int{{12}},
-		},
-		testWeek{
-			surveys: []int{11},
-			drills:  []int{0},
-			sells:   [][]int{{}},
-		},
-	},
-}
-
 var tg = testGame{
 	f: &field{
 		prob: make([]int, 24*80),

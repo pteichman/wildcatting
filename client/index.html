@@ -1,0 +1,33 @@
+<html>
+<head>
+    <link rel="stylesheet" type="text/css" href="client.css">
+    <script src="//d3js.org/d3.v3.min.js" charset="utf-8"></script>
+    <script src="jquery.min.js"></script>
+    <script src="mousetrap.min.js"></script>
+</head>
+<body>
+    <div id="lobby" class="screen">
+        <div id="lobby-title">PLAYERS: GAME 0</div>
+        <div id="lobby-players"></div>
+        <div id="lobby-any-key"><p>ANY KEY TO START</p></div>
+    </div>
+    <div id="survey" class="screen" style="display:none">
+        <div id="scene">East Texas, The Great Depression.  Oil is $1.33</div>
+        <div id="week"></div>
+        <div id="field">
+            <div id="prob" class="view"></div>
+            <div id="cost" class="view" style="display:none"></div>
+            <div id="tax" class="view" style="display:none"></div>
+            <div id="oil" class="view" style="display:none"></div>
+        </div>
+        <div id="fact">Texas is more than an area. Texas is an idea and an experience that
+             transcends present geographical boundaries.</div>
+    </div>
+    <div id="report" class="screen" style="display:none"></div>
+    <div id="drill" class="screen" style="display:none"></div>
+    <div id="well" class="screen" style="display:none"></div>
+    <div id="score" class="screen" style="display:none"></div>
+
+    <script src="client.js"></script>
+</body>
+</html>

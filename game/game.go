@@ -10,6 +10,7 @@ type Game interface {
 	Join(string) int
 	Move(Move) Update
 	View(int) *View
+	Field() *Field
 }
 
 // Update is a JSON serializable update containing the result to a player Move.
@@ -19,6 +20,10 @@ type Move struct {
 	PlayerID int
 	SiteID   int
 	Done     bool
+}
+
+type Field struct {
+	Prob []int `json:"prob"`
 }
 
 type View struct {
@@ -147,6 +152,10 @@ func (g *game) View(playerID int) *View {
 		Deeds:   deeds,
 		Revenue: revenue,
 	}
+}
+
+func (g *game) Field() *Field {
+	return &Field{g.f.prob}
 }
 
 // Oil and gas wells usually reach their maximum output shortly after completion.

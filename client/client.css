@@ -1,0 +1,81 @@
+body {
+    background-color: black;
+    font-family: "Courier New", Courier, monospace;
+}
+
+.screen {
+    width: 970px;
+    height: 442px;
+    position: relative;
+    color: white;
+}
+
+#lobby {
+    color: black;
+    background-color: #00c120;
+    position: relative;
+}
+
+#lobby-title {
+    top: 20px;
+    left: 400px;
+    position: relative;
+}
+
+#lobby-players {
+    top:60px;
+    left: 18px;
+    position: relative;
+}
+
+#lobby-any-key {
+    top: 218px;
+    left: 400px;
+    position: relative;
+}
+
+#survey {
+}
+
+#scene {
+}
+
+#week {
+    display: none;
+}
+
+#field {
+    top: 14px;
+    border:1px solid white;
+    position: relative;
+}
+
+.view {
+    top: 4px;
+    left: 4px;
+    position: relative;
+}
+
+svg rect {
+    height: 18px;
+    width: 12px;
+    /*position: relative;*/
+}
+
+svg {
+    height: 100%;
+    width: 100%;
+    /*position: relative;*/
+}
+
+#fact {
+    top: 30px;
+    position: relative;
+    font-style: italic;
+}
+
+#report {
+    color: black;
+    background-color: #00c120;
+    position: relative;
+}
