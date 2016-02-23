@@ -13,7 +13,7 @@ var costColor = d3.scale.quantize().domain([1, 25]).range(["#4575b4","#91bfdb","
 var taxColor = d3.scale.quantize().domain([100, 550]).range(["#4575b4","#91bfdb","#e0f3f8","#fee090","#fc8d59","#d73027"]);
 var oilColor = d3.scale.quantize().domain([1, 9]).range(["#4d4d4d",,"#878787","#bababa","#e0e0e0","#ffffff","#fddbc7","#f4a582","#d6604d","#b2182b"]);
 
-function lobby(game) {
+function lobbyState(game) {
     $("#lobby").hide()
 
     $.post("/game/0/player/0/", '{"done":true}', function(data) {
@@ -63,72 +63,67 @@ function lobby(game) {
 
     $("#survey").show()
 
-    return survey;
+    return surveyState;
 }
 
-function survey(game) {
+function surveyState(game) {
     $("#survey").hide()
     $("#report").show()
 
-    return report;
+    return reportState;
 }
 
-function report(game) {
+function reportState(game) {
     $("#report").hide()
     $("#drill").show()
 
-    return sell;
+    return sellState;
 }
 
-function drill(game) {
+function drillState(game) {
     $("#drill").hide()
     $("#sell").show()
 
-    return sell;
+    return sellState;
 }
 
-function sell(game) {
+function sellState(game) {
     $("#sell").hide()
     $("#lobby").show()
 
-    return lobby
+    return lobbyState;
 }
 
-var state = lobby;
+var curState = lobbyState;
 
 function move() {
-    state = state();
+    curState = curState();
 }
 
-function prob() {
-    $("#prob").hide()
-    $("#cost").show()
-    return cost;
+// % operator in javascript is remainder and isn't helpful for wrapping negatives
+function mod(a, n) {
+    return a - (n * Math.floor(a/n));
 }
 
-function cost() {
-    $("#cost").hide()
-    $("#tax").show()
-    return tax;
+function viewState() {
+    var views = ["#prob", "#cost", "#tax", "#oil"];
+    var cur = 0;
+
+    return function(delta) {
+        $(views[cur]).hide();
+        cur = mod((cur + delta), views.length);
+        $(views[cur]).show();
+    }
 }
 
-function tax() {
-    $("#tax").hide()
-    $("#oil").show()
-    return oil;
-}
-
-function oil() {
-    $("#oil").hide()
-    $("#prob").show()
-    return prob;
-}
-
-var view = prob;
-
-function tab() {
-    view = view();
-}
+var view = viewState();
 
 Mousetrap.bind('space', move);
-Mousetrap.bind('tab', tab);
+Mousetrap.bind('tab', function(e) {
+    event.preventDefault ? event.preventDefault() : (event.returnValue = false);
+    return view(1)
+    });
+Mousetrap.bind('shift+tab', function(e) {
+    event.preventDefault ? event.preventDefault() : (event.returnValue = false);
+    return view(-1);
+    });
