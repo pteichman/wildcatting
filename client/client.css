@@ -50,22 +50,26 @@ body {
     position: relative;
 }
 
-.view {
+#field svg {
+    height: 100%;
+    width: 100%;
     top: 4px;
     left: 4px;
     position: relative;
 }
 
-svg rect {
+#field svg rect {
     height: 18px;
     width: 12px;
-    /*position: relative;*/
+    opacity: 0.5;
 }
 
-svg {
-    height: 100%;
-    width: 100%;
-    /*position: relative;*/
+.cursor {
+  animation: blinker 1.5s linear infinite;
+}
+
+@keyframes blinker {
+  50% { opacity: 1; }
 }
 
 #fact {
