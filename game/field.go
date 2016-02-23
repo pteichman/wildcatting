@@ -25,14 +25,14 @@ func NewField() fmt.Stringer {
 }
 
 func newField() *field {
-	prob := fill(1+rand.Intn(4), minProb, maxProb, 0.05, 0.25)
-	oil := probFilter(fill(1, minOil, maxOil, 0.1, 0.5), prob)
+	prob := fill(1+rand.Intn(4), minProb, maxProb, 0.05, 0.25, false) // a few well formed peaks
+	oil := probFilter(fill(1, minOil, maxOil, 0.1, 0.5, true), prob)  // hardship
 
 	return &field{
-		prob: prob,                                              // a few well formed peaks
-		cost: fill(5+rand.Intn(5), minCost, maxCost, 0.1, 0.25), // many chaotic peaks
-		oil:  oil,                                               // hardship
-		tax:  fill(10+rand.Intn(10), minTax, maxTax, 0.1, 0.5),  // local politics
+		prob: prob,
+		cost: fill(5+rand.Intn(5), minCost, maxCost, 0.1, 0.25, true), // many chaotic peaks
+		oil:  oil,
+		tax:  fill(10+rand.Intn(10), minTax, maxTax, 0.1, 0.5, false), // local politics
 	}
 }
 
@@ -56,7 +56,7 @@ func closest(p int, peaks []int) (int, int) {
 	return minIdx, minDist
 }
 
-func fill(n, min, max int, decay, fuzz float64) []int {
+func fill(n, min, max int, decay, fuzz float64, inverse bool) []int {
 	var peaks []int
 	for i := 0; i < n; i++ {
 		peaks = append(peaks, rand.Intn(24*80))
@@ -87,6 +87,10 @@ func fill(n, min, max int, decay, fuzz float64) []int {
 		v = math.Min(math.Max(v, 0.0), 1.0)
 
 		values[i] = int(math.Floor(float64(min) + float64(max-min)*v))
+
+		if inverse {
+			values[i] = min + max - values[i]
+		}
 	}
 
 	return values
