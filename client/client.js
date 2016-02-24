@@ -6,7 +6,7 @@ var costColor = d3.scale.quantize().domain([1, 25]).range(["#4575b4","#91bfdb","
 var taxColor = d3.scale.quantize().domain([100, 550]).range(["#4575b4","#91bfdb","#e0f3f8","#fee090","#fc8d59","#d73027"]);
 var oilColor = d3.scale.quantize().domain([1, 9]).range(["#4d4d4d",,"#878787","#bababa","#e0e0e0","#ffffff","#fddbc7","#f4a582","#d6604d","#b2182b"]);
 
-var game = {site: 0, data: {}};
+var state = {};
 
 var fsm = StateMachine.create({
 
@@ -32,34 +32,34 @@ var fsm = StateMachine.create({
         onenterscore: score,
 
         onleavelobby: function() {
-            $("#lobby").hide();
+            d3.select("#lobby").style("display", "none");
             Mousetrap.reset();
         },
         onleavesurvey: function() {
-            $("#survey").hide();
+            d3.select("#survey").style("display", "none");
             Mousetrap.reset();
         },
         onleavereport: function() {
-            $("#report").hide();
+            d3.select("#report").style("display", "none");
             Mousetrap.reset();
         },
         onleavedrill: function() {
-            $("#drill").hide();
+            d3.select("#drill").style("display", "none");
             Mousetrap.reset();
         },
         onleavesell: function() {
-            $("#sell").hide();
+            d3.select("#sell").style("display", "none");
             Mousetrap.reset();
         },
         onleavescore: function() {
-            $("#score").hide();
+            d3.select("#score").style("display", "none");
             Mousetrap.reset();
         },
     }
 });
 
 function lobby() {
-    $("#lobby").show();
+    d3.select("#lobby").style("display", "block");
 
     d3.select("#lobby-players")
         .selectAll("p")
@@ -70,82 +70,94 @@ function lobby() {
 
     Mousetrap.bind('space', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
-        $.post("/game/0/player/0/", '{"done":true}', function(data) {
-            game.data = data;
-            fsm.play();
-        });
+
+        d3.json("/game/0/player/0/").post(
+            JSON.stringify({done: true}),
+            function(error, data) {
+                state = data;
+                fsm.play();
+            }
+        );
     });
 }
 
 function survey() {
-    $("#survey").show();
+    d3.select("#survey").style("display", "block");
 
     d3.select("#prob")
         .selectAll("rect")
-        .data(game.data.prob)
+        .data(state.prob)
         .enter()
         .append("rect")
-        .attr("class", function (d, i) { return "site-" + i; })
+        .attr("data-site", function (d, i) { return i; })
         .attr("y", function (d, i) { return Math.floor(i/80) * 18; })
         .attr("x", function (d, i) { return i%80 * 12 ; })
         .style("fill", probColor);
 
     d3.select("#cost")
         .selectAll("rect")
-        .data(game.data.cost)
+        .data(state.cost)
         .enter()
         .append("rect")
-        .attr("class", function (d, i) { return "site-" + i; })
+        .attr("data-site", function (d, i) { return i; })
         .attr("y", function (d, i) { return Math.floor(i/80) * 18; })
         .attr("x", function (d, i) { return i%80 * 12 ; })
         .style("fill", costColor);
 
     d3.select("#tax")
         .selectAll("rect")
-        .data(game.data.tax)
+        .data(state.tax)
         .enter()
         .append("rect")
-        .attr("class", function (d, i) { return "site-" + i; })
+        .attr("data-site", function (d, i) { return i; })
         .attr("y", function (d, i) { return Math.floor(i/80) * 18; })
         .attr("x", function (d, i) { return i%80 * 12 ; })
         .style("fill", taxColor);
 
     d3.select("#oil")
         .selectAll("rect")
-        .data(game.data.oil)
+        .data(state.oil)
         .enter()
         .append("rect")
-        .attr("class", function (d, i) { return "site-" + i; })
+        .attr("data-site", function (d, i) { return i; })
         .attr("y", function (d, i) { return Math.floor(i/80) * 18; })
         .attr("x", function (d, i) { return i%80 * 12 ; })
         .style("fill", function (d) { return d == 0 ? 'black' : oilColor(d); });
 
-    d3.select("#fact").text(game.data.fact);
-    d3.select("#week").text("Week " + game.data.week)
+    d3.select("#fact").text(state.fact);
+    d3.select("#week").text("Week " + state.week)
 
-    $(".site-0").toggleClass("cursor");
+    d3.selectAll("rect[data-site='0'").attr("class", "cursor");
 
     var views = ["#prob", "#cost", "#tax", "#oil"];
     var cur = 0;
     function view(delta) {
-        $(views[cur]).hide();
+        d3.select(views[cur]).style("display", "none");
         cur = mod(cur+delta, views.length);
-        $(views[cur]).show();
+        d3.select(views[cur]).style("display", "block");
     }
 
+    var site = 0;
     function cursor(dy, dx) {
-        $(".site-" + game.site).toggleClass("cursor");
+        d3.selectAll("rect[data-site='"+site+"']").attr("class", "");
 
-        var y = mod(Math.floor(game.site/80)+dy, 24);
-        var x = mod(mod(game.site, 80)+dx, 80);
-        game.site = y*80 + x;
+        var y = mod(Math.floor(site/80)+dy, 24);
+        var x = mod(mod(site, 80)+dx, 80);
+        site = y*80 + x;
 
-        $(".site-" + game.site).toggleClass("cursor");
+        d3.selectAll("rect[data-site='"+site+"']").attr("class", "cursor");
     }
 
     Mousetrap.bind('space', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
-        fsm.survey();
+
+        d3.json("/game/0/player/0/").post(
+            JSON.stringify({site: site}),
+            function(error, data) {
+                state = data;
+                fsm.survey();
+            }
+        );
     });
     Mousetrap.bind('tab', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
@@ -174,40 +186,39 @@ function survey() {
 }
 
 function report() {
-    $("#report").show()
+    d3.select("#report").style("display", "block");
+    d3.select("#report-site").text("X="+mod(state.site, 80)+"\tY="+Math.floor(state.site/80));
+    d3.select("#report-prob").text(state.prob + "%");
+    d3.select("#report-cost").text("$\t" + state.cost);
+    d3.select("#report-tax").text("$\t" + state.tax);
 
-    // TODO define an Object to serialize you weirdo
-    $.post("/game/0/player/0/", '{"site":' + game.site + '}', function(data) {
-        d3.select("#report-site").text("X="+mod(game.site, 80)+"\tY="+Math.floor(game.site/80));
-        d3.select("#report-prob").text(data.prob + "%");
-        d3.select("#report-cost").text("$\t" + data.cost);
-        d3.select("#report-tax").text("$\t" + data.tax);
-    }).done(function() {
-        Mousetrap.bind('y', function(e) {
-            e.preventDefault ? e.preventDefault() : (e.returnValue = false);
-            fsm.yes()
-        });
-        Mousetrap.bind('n', function(e) {
-            e.preventDefault ? e.preventDefault() : (e.returnValue = false);
-            fsm.no()
-        });
+    Mousetrap.bind('y', function(e) {
+        e.preventDefault ? e.preventDefault() : (e.returnValue = false);
+        fsm.yes();
+    });
+    Mousetrap.bind('n', function(e) {
+        e.preventDefault ? e.preventDefault() : (e.returnValue = false);
+        fsm.no();
     });
 }
 
 function drill() {
-    $("#drill").show()
-
-    function advance() {
-        $.post("/game/0/player/0/", '{}', function(data) {
-            if (data.oil) {
-                fsm.done()
-            } else if (data.Depth == 9) {
-                fsm.done()
-            }
-        });
-    }
+    d3.select("#drill").style("display", "block");
 
     advance();
+
+    function advance() {
+        d3.json("/game/0/player/0/").post(
+            JSON.stringify({}),
+            function(error, data) {
+                if (data.oil) {
+                    fsm.done();
+                } else if (data.depth == 9) {
+                    fsm.done();
+                }
+            }
+        );
+    }
 
     Mousetrap.bind('space', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
@@ -216,27 +227,36 @@ function drill() {
 
     Mousetrap.bind('q', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
-        $.post("/game/0/player/0/", '{"done":true}', function(data) {
-            fsm.done();
-        });
+        d3.json("/game/0/player/0/").post(
+            JSON.stringify({done: true}),
+            function(error, data) {
+                fsm.done();
+            }
+        );
     });
 }
 
 function sell() {
-    $("#sell").show()
+    d3.select("#sell").style("display", "block");
     Mousetrap.bind('q', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
-        $.post("/game/0/player/0/", '{"done":true}', function(data) {
-            fsm.done()
-        });
+        d3.json("/game/0/player/0/").post(
+            JSON.stringify({done: true}),
+            function(error, data) {
+                fsm.done();
+            }
+        );
     });
 }
 
 function score() {
-    $("#score").show()
+    d3.select("#score").style("display", "block");
     Mousetrap.bind('space', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
-        fsm.done()
+        d3.json("/game/0/player/0/", function(error, data) {
+            state = data;
+            fsm.done();
+        });
     });
 }
 
