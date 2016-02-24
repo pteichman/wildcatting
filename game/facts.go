@@ -53,4 +53,13 @@ var facts = []string{
 	`More species of bats live in Texas than in any other part of the United States.`,
 	`Amarillo, Texas has the world's largest helium well.`,
 	`Texas is more than an area. Texas is an idea and an experience that transcends present geographical boundaries.`,
+	`Texas quickly became one of the leading oil producing states in the U.S., along with Oklahoma and California; soon the nation overtook the Russian Empire as the top producer of petroleum.`,
+	`Notable wildcatters include Glenn McCarthy, Thomas Baker Slick, Sr. and Mike Benedum, Joe Trees, Clem S. Clarke, and Columbus Marion Joiner.`,
+	`According to tradition, the origin of the term in the petroleum industry comes from Wildcat Hollow in Oil Creek State Park located near Titusville, Pennsylvania. Wildcat Hollow was one of the many productive fields in the early oil era.`,
+	`Between 1920 and 1922, the town of Breckenridge in rural North Texas grew from about 1,500 people to nearly 30,000.`,
+	`The town of Kilgore in eastern Texas grew from about 500 to 12,000 between 1930 and 1936 following the discovery of the East Texas field.`,
+	`Though many failed in their endeavors there were many success stories. The majority of the pioneering of and searching for new oilfields in this era was done by these independents, not big business interests.`,
+	`Another indirect effect of the boom was the growth of gambling and prostitution in many communities.`,
+	`Glenn McCarthy was a modest oil worker who pioneered wells around what the Houston area. His love of bourbon led him to establish the WildCatter bourbon label.`,
+	`Known as "Silver Dollar Jim", for his habit of carrying silver dollars and tossing them to doormen, the poor, and anyone that waited on him, West Jr. is regarded by many as the most flamboyant of Houston oilmen. His lavish spending habits and his proclivity for amateur law enforcement were well known.`,
 }
