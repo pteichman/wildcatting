@@ -29,6 +29,11 @@ type Field struct {
 type View struct {
 	Week    int      `json:"week"`
 	Players []string `json:"players"`
+	Fact    string   `json:"fact"`
+	Prob    []int    `json:"prob"`
+	Cost    []int    `json:"cost"`
+	Tax     []int    `json:"tax"`
+	Oil     []int    `json:"oil"`
 	Deeds   []Deed   `json:"deeds"`
 	Revenue []int    `json:"revenue"`
 }
@@ -149,6 +154,11 @@ func (g *game) View(playerID int) *View {
 	return &View{
 		Players: g.players,
 		Week:    g.week,
+		Fact:    facts[rand.Intn(len(facts))],
+		Prob:    g.f.prob,
+		Cost:    g.f.cost,
+		Tax:     g.f.tax,
+		Oil:     g.f.oil,
 		Deeds:   deeds,
 		Revenue: revenue,
 	}

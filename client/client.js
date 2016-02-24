@@ -70,14 +70,15 @@ function lobby() {
 
     Mousetrap.bind('space', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
-
-        d3.json("/game/0/player/0/").post(
-            JSON.stringify({done: true}),
-            function(error, data) {
+        d3.json("/game/0/player/0/")
+            .on("load", function(data) {
                 state = data;
                 fsm.play();
-            }
-        );
+            })
+            .on("error", function(error) {
+                alert(error);
+            })
+            .post(JSON.stringify({done: true}));
     });
 }
 
@@ -151,14 +152,17 @@ function survey() {
     Mousetrap.bind('space', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
 
-        d3.json("/game/0/player/0/").post(
-            JSON.stringify({site: site}),
-            function(error, data) {
+        d3.json("/game/0/player/0/")
+            .on("load", function(data) {
                 state = data;
                 fsm.survey();
-            }
-        );
+            })
+            .on("error", function(error) {
+                alert(error);
+             })
+            .post(JSON.stringify({site: site}));
     });
+
     Mousetrap.bind('tab', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
         view(1);
@@ -208,16 +212,18 @@ function drill() {
     advance();
 
     function advance() {
-        d3.json("/game/0/player/0/").post(
-            JSON.stringify({}),
-            function(error, data) {
+        d3.json("/game/0/player/0/")
+            .on("load", function(data) {
                 if (data.oil) {
                     fsm.done();
                 } else if (data.depth == 9) {
                     fsm.done();
                 }
-            }
-        );
+            })
+            .on("error", function(error) {
+                alert(error);
+             })
+            .post(JSON.stringify({}));
     }
 
     Mousetrap.bind('space', function(e) {
@@ -227,12 +233,10 @@ function drill() {
 
     Mousetrap.bind('q', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
-        d3.json("/game/0/player/0/").post(
-            JSON.stringify({done: true}),
-            function(error, data) {
-                fsm.done();
-            }
-        );
+        d3.json("/game/0/player/0/")
+            .on("load", function(data) { fsm.done(); })
+            .on("error", function(error) { alert(error); })
+            .post(JSON.stringify({done: true}));
     });
 }
 
@@ -240,12 +244,13 @@ function sell() {
     d3.select("#sell").style("display", "block");
     Mousetrap.bind('q', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
-        d3.json("/game/0/player/0/").post(
-            JSON.stringify({done: true}),
-            function(error, data) {
+        d3.json("/game/0/player/0/")
+            .on("load", function(data) {
+                state = data;
                 fsm.done();
-            }
-        );
+            })
+            .on("error", function(error) { alert(error); })
+            .post(JSON.stringify({done: true}));
     });
 }
 
@@ -253,10 +258,13 @@ function score() {
     d3.select("#score").style("display", "block");
     Mousetrap.bind('space', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
-        d3.json("/game/0/player/0/", function(error, data) {
-            state = data;
-            fsm.done();
-        });
+        d3.json("/game/0/player/0/")
+            .on("load", function(data) {
+                state = data;
+                fsm.done();
+            })
+            .on("error", function(error) { alert(error); })
+            .get();
     });
 }
 
