@@ -23,7 +23,6 @@ type StartUpdate struct {
 
 // SurveyUpdate is a JSON serializable Update containing the result of a survey Move.
 type SurveyUpdate struct {
-	Site int `json:"site"`
 	Prob int `json:"prob"`
 	Cost int `json:"cost"`
 	Tax  int `json:"tax"`
@@ -152,7 +151,6 @@ func survey(g *game, move <-chan Move) playerFn {
 		g.turn = (g.turn + 1) % len(g.players)
 
 		update := SurveyUpdate{
-			Site: mv.SiteID,
 			Prob: g.f.prob[mv.SiteID],
 			Cost: g.f.cost[mv.SiteID],
 			Tax:  g.f.tax[mv.SiteID],
