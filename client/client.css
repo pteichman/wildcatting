@@ -101,3 +101,21 @@ body {
     left: 400px;
     position: relative;
 }
+
+#drill {
+    top: 14px;
+    border:1px solid white;
+    position: relative;
+}
+
+#sell {
+    color: black;
+    background-color: #00c120;
+    position: relative;
+}
+
+#score {
+    color: black;
+    background-color: #00c120;
+    position: relative;
+}
