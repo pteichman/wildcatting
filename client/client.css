@@ -83,3 +83,21 @@ body {
     background-color: #00c120;
     position: relative;
 }
+
+#report-title {
+    top: 20px;
+    left: 400px;
+    position: relative;
+}
+
+#report-table {
+    top: 80px;
+    left: 380px;
+    position: relative;
+}
+
+#report-drill-a-well {
+    top: 218px;
+    left: 400px;
+    position: relative;
+}

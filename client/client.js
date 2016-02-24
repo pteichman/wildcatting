@@ -76,6 +76,16 @@ function survey() {
     $("#survey").hide()
     $("#report").show()
 
+    // figure out the cursor site
+    // ...
+
+    $.post("/game/0/player/0/", '{"site":1}', function(data) {
+        d3.select("#report-site").text(data.site);
+        d3.select("#report-prob").text(data.prob + "%");
+        d3.select("#report-cost").text("$\t" + data.cost);
+        d3.select("#report-tax").text("$\t" + data.tax);
+    });
+
     return report;
 }
 
@@ -135,6 +145,7 @@ function cursorState() {
         x = mod(x+dx, 80)
 
         $(".site-" + (y * 80 + x)).toggleClass("cursor");
+        return site;
     }
 }
 
