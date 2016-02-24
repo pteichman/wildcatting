@@ -44,7 +44,7 @@ func (h *handler) newRouter() *mux.Router {
 		route{"POST", "/game/{gid:[0-9]+}/", h.postGameID},
 		route{"GET", "/game/{gid:[0-9]+}/", h.getGameID},
 		route{"POST", "/game/{gid:[0-9]+}/player/{pid:[0-9]+}/", h.postPlayerID},
-		route{"GET", "/game/{gid:[0-9]+}/player/{pid:[0-9]}+/", h.getPlayerID},
+		route{"GET", "/game/{gid:[0-9]+}/player/{pid:[0-9]+}/", h.getPlayerID},
 	}
 
 	r := mux.NewRouter()
@@ -126,12 +126,18 @@ func (h *handler) getGameID(w http.ResponseWriter, r *http.Request) {
 // selling -> well revenue
 func (h *handler) postPlayerID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	gameID, _ := strconv.Atoi(vars["gid"])
-	playerID, _ := strconv.Atoi(vars["pid"])
+	gameID, err := strconv.Atoi(vars["gid"])
+	if err != nil {
+		panic(err)
+	}
+	playerID, err := strconv.Atoi(vars["pid"])
+	if err != nil {
+		panic(err)
+	}
 
 	var mv Move
 	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&mv)
+	err = decoder.Decode(&mv)
 	if err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
