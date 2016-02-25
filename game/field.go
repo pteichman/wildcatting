@@ -12,8 +12,8 @@ const (
 	maxProb = 100
 	minOil  = 1
 	maxOil  = 9
-	minCost = 1
-	maxCost = 25
+	minCost = 10
+	maxCost = 250
 	minTax  = 100
 	maxTax  = 550
 )

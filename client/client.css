@@ -138,6 +138,11 @@ body {
 
 #sell-table thead th {
     font-weight: normal;
+    text-align: right;
+}
+
+#sell-table td {
+    text-align: right;
 }
 
 #score {

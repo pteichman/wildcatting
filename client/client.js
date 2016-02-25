@@ -2,7 +2,7 @@
 var players = ["bob","joe","jbz","peter","snorp"];
 
 var probColor = d3.scale.quantize().domain([1, 100]).range(["#4575b4","#91bfdb","#e0f3f8","#fee090","#fc8d59","#d73027"]);
-var costColor = d3.scale.quantize().domain([1, 25]).range(["#4575b4","#91bfdb","#e0f3f8","#fee090","#fc8d59","#d73027"]);
+var costColor = d3.scale.quantize().domain([10, 250]).range(["#4575b4","#91bfdb","#e0f3f8","#fee090","#fc8d59","#d73027"]);
 var taxColor = d3.scale.quantize().domain([100, 550]).range(["#4575b4","#91bfdb","#e0f3f8","#fee090","#fc8d59","#d73027"]);
 var oilColor = d3.scale.quantize().domain([1, 9]).range(["#4d4d4d",,"#878787","#bababa","#e0e0e0","#ffffff","#fddbc7","#f4a582","#d6604d","#b2182b"]);
 
@@ -49,6 +49,7 @@ var fsm = StateMachine.create({
         },
         onleavesell: function() {
             d3.select("#sell").style("display", "none");
+            d3.select("#sell-table tbody").html("");
             Mousetrap.reset();
         },
         onleavescore: function() {
@@ -155,6 +156,7 @@ function survey() {
         d3.json("/game/0/player/0/")
             .on("load", function(data) {
                 state = data;
+                state.site = site; // bleh
                 fsm.survey();
             })
             .on("error", function(error) {
@@ -192,9 +194,9 @@ function survey() {
 function report() {
     d3.select("#report").style("display", "block");
     d3.select("#report-site").text("X="+mod(state.site, 80)+"\tY="+Math.floor(state.site/80));
-    d3.select("#report-prob").text(state.prob + "%");
-    d3.select("#report-cost").text("$\t" + state.cost);
-    d3.select("#report-tax").text("$\t" + state.tax);
+    d3.select("#report-prob").text(state.prob[state.site] + "%");
+    d3.select("#report-cost").text("$\t" + state.cost[state.site]);
+    d3.select("#report-tax").text("$\t" + state.tax[state.site]);
 
     Mousetrap.bind('y', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
@@ -211,15 +213,23 @@ function drill() {
 
     advance();
 
+    var site = state.site;
+    var bit = 0;
     function advance() {
         d3.json("/game/0/player/0/")
             .on("load", function(data) {
-                if (data.oil) {
-                    state = data;
-                    fsm.done();
-                } else if (data.depth == 9) {
-                    state = data;
-                    fsm.done();
+                bit++;
+                state = data;
+
+                // this is awkward. deeds should be a site->deed map
+                for (var i=0; i < state.deeds.length; i++) {
+                    if (state.deeds[i].site != site) {
+                        continue;
+                    }
+                    // split these and add DRY HOLE and gusher animations
+                    if (state.deeds[i].oil || bit == 9) {
+                        fsm.done();
+                    }
                 }
             })
             .on("error", function(error) {
@@ -248,13 +258,24 @@ function drill() {
 function sell() {
     d3.select("#sell").style("display", "block");
 
+    function siteData(d) {
+        var depth = d.oil > 0 ? (d.oil * 100): "";
+        var x = mod(d.site, 80);
+        var y = Math.floor(d.site/80);
+        var tax = state.tax[d.site];
+        var pnl = d.income - d.cost;
+        var data = [x, y, depth, "$", d.cost, "$", tax, "$", d.income, "$", pnl]
+        console.log(data);
+        return data;
+    }
+
     d3.select("#sell-table tbody")
-        .selectAll("td")
-        .data(state)
+        .selectAll("tr")
+        .data(state.deeds)
         .enter()
         .append("tr")
         .selectAll("td")
-        .data(function(d) { return d3.values(d); })
+        .data(siteData)
         .enter()
         .append("td")
         .text(function(d) { return d; });
@@ -275,13 +296,7 @@ function score() {
     d3.select("#score").style("display", "block");
     Mousetrap.bind('space', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
-        d3.json("/game/0/player/0/")
-            .on("load", function(data) {
-                state = data;
-                fsm.done();
-            })
-            .on("error", function(error) { alert(error); })
-            .get();
+        fsm.done();
     });
 }
 
