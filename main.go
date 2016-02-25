@@ -42,7 +42,6 @@ func (h *handler) newRouter() *mux.Router {
 	var routes = []route{
 		route{"POST", "/game/", h.postGame},
 		route{"POST", "/game/{gid:[0-9]+}/", h.postGameID},
-		route{"GET", "/game/{gid:[0-9]+}/", h.getGameID},
 		route{"POST", "/game/{gid:[0-9]+}/player/{pid:[0-9]+}/", h.postPlayerID},
 		route{"GET", "/game/{gid:[0-9]+}/player/{pid:[0-9]+}/", h.getPlayerID},
 	}
@@ -97,25 +96,6 @@ func (h *handler) postGameID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("\"%s\" joined game %d as player %d", name, gameID, playerID)
-}
-
-// omniscent game state
-func (h *handler) getGameID(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	gameID, err := strconv.Atoi(vars["gid"])
-	if err != nil {
-		// mux should guarantee a parsable int
-		panic(err)
-	}
-
-	field := h.games[gameID].Field()
-	js, err := json.Marshal(field)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Write(js)
 }
 
 // move making... starting, surveying, drilling, selling
