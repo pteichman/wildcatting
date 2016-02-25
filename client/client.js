@@ -37,6 +37,7 @@ var fsm = StateMachine.create({
         },
         onleavesurvey: function() {
             d3.select("#survey").style("display", "none");
+            d3.select("#field svg").selectAll("*").remove();
             Mousetrap.reset();
         },
         onleavereport: function() {
