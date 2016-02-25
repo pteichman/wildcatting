@@ -34,7 +34,19 @@
         <div id="report-drill-a-well">DRILL A WELL? (Y-N)</div>
     </div>
     <div id="drill" class="screen" style="display:none">DRILL BABY DRILL</div>
-    <div id="sell" class="screen" style="display:none">SELL A WELL?</div>
+    <div id="sell" class="screen" style="display:none">
+        <table id=sell-title><tr>
+            <td id="sell-title-player">BOB</td>
+            <td id="sell-title-price">$1.31 PER BARREL</td>
+            <td id="sell-title-week">WEEK 1</td></tr>
+        </table>
+        <table id="sell-table">
+            <thead id="sell-table-headers">
+                <tr><th>X</th><th>Y</th><th>COST</th><th>TAX</th><th>INCOME</th><th>P&ampL</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
     <div id="score" class="screen" style="display:none">WEEKLY SUMMARY</div>
 
     <script src="client.js"></script>

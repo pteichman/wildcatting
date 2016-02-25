@@ -114,6 +114,32 @@ body {
     position: relative;
 }
 
+#sell-title {
+    table-layout:fixed;
+    width: 100%;
+    height: auto;
+    position:relative;
+}
+
+#sell-title-price {
+    text-align: center;
+}
+
+#sell-title-week {
+    text-align: right;
+}
+
+#sell-table {
+    table-layout:fixed;
+    width: 100%;
+    height: auto;
+    position:relative;
+}
+
+#sell-table thead th {
+    font-weight: normal;
+}
+
 #score {
     color: black;
     background-color: #00c120;

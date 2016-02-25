@@ -215,8 +215,10 @@ function drill() {
         d3.json("/game/0/player/0/")
             .on("load", function(data) {
                 if (data.oil) {
+                    state = data;
                     fsm.done();
                 } else if (data.depth == 9) {
+                    state = data;
                     fsm.done();
                 }
             })
@@ -234,7 +236,10 @@ function drill() {
     Mousetrap.bind('q', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
         d3.json("/game/0/player/0/")
-            .on("load", function(data) { fsm.done(); })
+            .on("load", function(data) {
+                state = data;
+                fsm.done();
+            })
             .on("error", function(error) { alert(error); })
             .post(JSON.stringify({done: true}));
     });
@@ -242,6 +247,18 @@ function drill() {
 
 function sell() {
     d3.select("#sell").style("display", "block");
+
+    d3.select("#sell-table tbody")
+        .selectAll("td")
+        .data(state)
+        .enter()
+        .append("tr")
+        .selectAll("td")
+        .data(function(d) { return d3.values(d); })
+        .enter()
+        .append("td")
+        .text(function(d) { return d; });
+
     Mousetrap.bind('q', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
         d3.json("/game/0/player/0/")
