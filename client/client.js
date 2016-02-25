@@ -177,17 +177,33 @@ function survey() {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
         cursor(0, -1);
     });
+    Mousetrap.bind('shift+left', function(e) {
+        e.preventDefault ? e.preventDefault() : (e.returnValue = false);
+        cursor(0, -3);
+    });
     Mousetrap.bind('down', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
         cursor(1, 0);
+    });
+    Mousetrap.bind('shift+down', function(e) {
+        e.preventDefault ? e.preventDefault() : (e.returnValue = false);
+        cursor(3, 0);
     });
     Mousetrap.bind('right', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
         cursor(0, 1);
     });
+    Mousetrap.bind('shift+right', function(e) {
+        e.preventDefault ? e.preventDefault() : (e.returnValue = false);
+        cursor(0, 3);
+    });
     Mousetrap.bind('up', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
         cursor(-1, 0);
+    });
+    Mousetrap.bind('shift+up', function(e) {
+        e.preventDefault ? e.preventDefault() : (e.returnValue = false);
+        cursor(-3, 0);
     });
 }
 
