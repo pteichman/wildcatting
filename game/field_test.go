@@ -23,45 +23,37 @@ func TestNeighbors(t *testing.T) {
 	}
 }
 
-// FIXME table driven reservoir tests something like this
 var reservoirTests = []struct {
 	depth int
 	oil   []int
+	site  int
 }{
-	{6, []int{118, 119, 120, 121, 122, 40, 200}},
+	{9, []int{117}, 117},
+	{3, []int{1, 2, 3, 4, 5, 6, 7, 8, 9}, 1},
+	{4, []int{0, 80, 160, 240, 320}, 320},
+	{6, []int{118, 119, 120, 121, 122, 40, 200}, 120},
 }
 
 func TestReservoir(t *testing.T) {
-	f := &field{
-		oil: make([]int, 80*24),
-	}
 
-	depth := 6
-	f.oil[118] = depth
-	f.oil[119] = depth
-	f.oil[120] = depth
-	f.oil[121] = depth
-	f.oil[122] = depth
+	for _, test := range reservoirTests {
+		f := &field{
+			oil: make([]int, 80*24),
+		}
+		expect := make(map[int]bool)
+		for _, s := range test.oil {
+			f.oil[s] = test.depth
+			expect[s] = true
+		}
 
-	f.oil[40] = depth
-	f.oil[200] = depth
-
-	expect := map[int]bool{
-		40:  true,
-		118: true,
-		119: true,
-		120: true,
-		121: true,
-		122: true,
-		200: true,
-	}
-	res := f.reservoir(120)
-	if len(res) != 7 {
-		t.Errorf("expected 7 neighbors; got %d", len(res))
-	}
-	for _, nbr := range res {
-		if _, ok := expect[nbr]; !ok {
-			t.Errorf("unexpected neighbor %d", nbr)
+		res := f.reservoir(test.site)
+		if len(res) != len(expect) {
+			t.Errorf("expected %d neighbors; got %d", len(expect), len(res))
+		}
+		for _, nbr := range res {
+			if _, ok := expect[nbr]; !ok {
+				t.Errorf("unexpected neighbor %d", nbr)
+			}
 		}
 	}
 }
