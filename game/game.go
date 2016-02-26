@@ -85,7 +85,7 @@ func (g *game) run() {
 	}
 }
 
-func (g *game) next() {
+func (g *game) nextWeek() {
 	g.week++
 	g.price = int(100 * math.Abs(1+rand.NormFloat64()))
 
@@ -121,7 +121,8 @@ func (g *game) next() {
 				until = g.week
 			}
 
-			// production diminishes 33% per pump site week
+			// pressure diminishes 33% per pump site week. with a large enough
+			// reservoir this is subtle but for a small reservoir it's devastating
 			tot -= 1.0 - math.Pow(0.666, float64(until-d.start))
 		}
 		pressure := tot / float64(len(res))
@@ -228,7 +229,7 @@ func lobby(g *game) stateFn {
 		}
 		log.Printf("Owner started game with %d players", len(g.players))
 
-		g.next()
+		g.nextWeek()
 
 		g.update[mv.PlayerID] <- g.View(mv.PlayerID)
 		break
@@ -270,7 +271,7 @@ func week(g *game) stateFn {
 	close(done)
 	log.Printf("All %d players completed week %d", len(g.players), g.week)
 
-	g.next()
+	g.nextWeek()
 
 	if g.week == 13 {
 		log.Println("Game over!")
