@@ -5,7 +5,7 @@ body {
 
 .screen {
     width: 970px;
-    height: 442px;
+    height: 460px;
     position: relative;
     color: white;
 }
@@ -28,7 +28,7 @@ body {
     position: relative;
 }
 
-#lobby-any-key {
+#lobby-prompt {
     top: 218px;
     left: 400px;
     position: relative;
@@ -86,19 +86,22 @@ body {
 
 #report-title {
     top: 20px;
-    left: 400px;
+    width: 180px;
+    margin: 0 auto;
     position: relative;
 }
 
 #report-table {
-    top: 80px;
-    left: 380px;
+    top: 120px;
+    width: 300px;
+    margin: 0 auto;
     position: relative;
 }
 
-#report-drill-a-well {
-    top: 218px;
-    left: 400px;
+#report-prompt {
+    top: 320px;
+    width: 200px;
+    margin: 0 auto;
     position: relative;
 }
 
@@ -106,6 +109,26 @@ body {
     top: 14px;
     border:1px solid white;
     position: relative;
+}
+
+#drill-inner {
+    width: 50%;
+    margin: 0 auto;
+    top: 200px;
+    text-align: center;
+    position: relative;
+}
+
+#drill-table {
+    table-layout:fixed;
+    width: 130px;
+    margin: 0 auto;
+    color: white;
+    position: relative;
+}
+
+#drill-table td {
+    text-align: right;
 }
 
 #sell {

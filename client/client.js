@@ -238,11 +238,15 @@ function drill() {
                 bit++;
                 state = data;
 
+                d3.select("#drill-depth").text(bit * 100);
+                d3.select("#drill-cost").text(state.cost[site] * bit);
+
                 // this is awkward. deeds should be a site->deed map
                 for (var i=0; i < state.deeds.length; i++) {
                     if (state.deeds[i].site != site) {
                         continue;
                     }
+
                     // split these and add DRY HOLE and gusher animations
                     if (state.deeds[i].oil || bit == 9) {
                         fsm.done();
@@ -280,8 +284,7 @@ function sell() {
         var x = mod(d.site, 80);
         var y = Math.floor(d.site/80);
         var tax = state.tax[d.site];
-        var pnl = d.income - d.cost;
-        var data = [x, y, depth, "$", d.cost, "$", tax, "$", d.income, "$", pnl]
+        var data = [x, y, depth, "$", d.cost, "$", tax, "$", d.income, "$", d.pnl]
         console.log(data);
         return data;
     }

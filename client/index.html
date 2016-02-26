@@ -9,7 +9,7 @@
     <div id="lobby" class="screen">
         <div id="lobby-title">PLAYERS: GAME 0</div>
         <div id="lobby-players"></div>
-        <div id="lobby-any-key"><p>ANY KEY TO START</p></div>
+        <div id="lobby-prompt"><p>ANY KEY TO START</p></div>
     </div>
     <div id="survey" class="screen" style="display:none">
         <div id="scene">East Texas, Gusher Age.  Oil is $1.33</div>
@@ -31,9 +31,19 @@
             <tr><td>COST PER METER</td><td id="report-cost"></td></tr>
             <tr><td>TAXES PER WEEK</td><td id="report-tax"></td></tr>
         </table>
-        <div id="report-drill-a-well">DRILL A WELL? (Y-N)</div>
+        <div id="report-prompt">DRILL A WELL? (Y-N)</div>
     </div>
-    <div id="drill" class="screen" style="display:none">DRILL BABY DRILL</div>
+    <div id="drill" class="screen" style="display:none">
+        <div id="drill-inner">
+            <div>PRESS ANY KEY TO DRILL</div>
+            <div>PRESS Q TO STOP</div>
+            <br>
+            <table id="drill-table">
+                <tr><td>DEPTH:</td><td id="drill-depth"></td></tr>
+                <tr><td>COST:</td><td id="drill-cost"></td></tr>
+            </table>
+        </div>
+    </div>
     <div id="sell" class="screen" style="display:none">
         <table id=sell-title><tr>
             <td id="sell-title-player">BOB</td>
