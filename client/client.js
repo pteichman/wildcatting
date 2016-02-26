@@ -85,9 +85,9 @@ function lobby() {
 }
 
 function smacks(cents, width) {
-  s = cents + '';
-  s = s.length >= 3 ? s : new Array(3 - s.length + 1).join(0) + s;
-  return "$" + s.slice(0, -2) + "." + s.slice(-2)
+    s = cents + '';
+    s = s.length >= 3 ? s : new Array(3 - s.length + 1).join(0) + s;
+    return "$" + s.slice(0, -2) + "." + s.slice(-2)
 }
 
 function survey() {
