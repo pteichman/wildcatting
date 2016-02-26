@@ -105,11 +105,7 @@ func (g *game) nextWeek() {
 		}
 
 		// production considers reservoir pressure over time
-		var res []int
-		for r := range g.f.reservoir(s) {
-			res = append(res, r)
-		}
-
+		res := g.f.reservoir(s)
 		tot := float64(len(res))
 		for _, s := range res {
 			d := g.deeds[s]

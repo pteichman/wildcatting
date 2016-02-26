@@ -154,29 +154,26 @@ func neighbors(s int) <-chan int {
 	return out
 }
 
-func (f *field) reservoir(s int) <-chan int {
-	out := make(chan int)
+func (f *field) reservoir(s int) []int {
+	var res []int
 	visited := make(map[int]bool)
 	frontier := []int{s}
-	go func(depth int) {
-		for len(frontier) > 0 {
-			cur := frontier[len(frontier)-1]
-			frontier = frontier[:len(frontier)-1]
-			visited[cur] = true
+	for len(frontier) > 0 {
+		cur := frontier[len(frontier)-1]
+		frontier = frontier[:len(frontier)-1]
+		visited[cur] = true
 
-			if f.oil[cur] != depth {
+		if f.oil[cur] != f.oil[s] {
+			continue
+		}
+
+		for nbr := range neighbors(cur) {
+			if _, ok := visited[nbr]; ok {
 				continue
 			}
-
-			for nbr := range neighbors(cur) {
-				if _, ok := visited[nbr]; ok {
-					continue
-				}
-				frontier = append(frontier, nbr)
-			}
-			out <- cur
+			frontier = append(frontier, nbr)
 		}
-		close(out)
-	}(f.oil[s])
-	return out
+		res = append(res, cur)
+	}
+	return res
 }

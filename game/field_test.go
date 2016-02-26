@@ -1,10 +1,6 @@
 package game
 
-import (
-	"fmt"
-	"math/rand"
-	"testing"
-)
+import "testing"
 
 type pt struct{ y, x int }
 
@@ -59,28 +55,13 @@ func TestReservoir(t *testing.T) {
 		122: true,
 		200: true,
 	}
-	ct := 0
-	for nbr := range f.reservoir(120) {
+	res := f.reservoir(120)
+	if len(res) != 7 {
+		t.Errorf("expected 7 neighbors; got %d", len(res))
+	}
+	for _, nbr := range res {
 		if _, ok := expect[nbr]; !ok {
 			t.Errorf("unexpected neighbor %d", nbr)
 		}
-		ct++
 	}
-	if ct != 7 {
-		t.Errorf("expected 7 neighbors; got %d", ct)
-	}
-}
-
-func _TestReservoir(t *testing.T) {
-	f := newField()
-
-	for i := 0; i < 1; i++ {
-		s := rand.Intn(80 * 24)
-		fmt.Printf("site %d:", s)
-		for r := range f.reservoir(i) {
-			fmt.Printf(" %d", r)
-		}
-		fmt.Println()
-	}
-	t.Fail()
 }
