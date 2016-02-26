@@ -219,7 +219,7 @@ func week(g *game) stateFn {
 		// 100 barrels per site @ 1.0 pressure
 		output := int(math.Floor(pressure * 100.0 * float64(len(res))))
 		gross := int(float64(deed.output*g.price) / 100)
-		log.Printf("Well at site %d @ reservoir %d is outputting %d barrels with reservoir pressure %f with oil price %d grossing %d",
+		log.Printf("site %d reservoir %d output %d pressure %f price %d gross %d",
 			s, res, deed.output, pressure, g.price, gross)
 
 		deed.output = output
