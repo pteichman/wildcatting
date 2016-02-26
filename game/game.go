@@ -18,6 +18,7 @@ type Game interface {
 type State struct {
 	Players []string `json:"players"`
 	Week    int      `json:"week"`
+	Price   int      `json:"price"`
 	Prob    []int    `json:"prob"`
 	Cost    []int    `json:"cost"`
 	Tax     []int    `json:"tax"`
@@ -86,6 +87,7 @@ func (g *game) run() {
 
 func (g *game) next() {
 	g.week++
+	g.price = int(100 * math.Abs(1+rand.NormFloat64()))
 
 	// Oil and gas wells usually reach their maximum output shortly after completion.
 	// From that time, other than wells completed in water-drive reservoirs, they decline
@@ -187,6 +189,7 @@ func (g *game) View(playerID int) *State {
 	return &State{
 		Players: g.players,
 		Week:    g.week,
+		Price:   g.price,
 		Prob:    g.f.prob,
 		Cost:    g.f.cost,
 		Tax:     g.f.tax,
@@ -224,10 +227,10 @@ func lobby(g *game) stateFn {
 			continue
 		}
 		log.Printf("Owner started game with %d players", len(g.players))
-		g.week++
 
-		update := g.View(mv.PlayerID)
-		g.update[mv.PlayerID] <- update
+		g.next()
+
+		g.update[mv.PlayerID] <- g.View(mv.PlayerID)
 		break
 	}
 
@@ -236,8 +239,6 @@ func lobby(g *game) stateFn {
 
 // week is the game state machine function for handling a single week's gameplay.
 func week(g *game) stateFn {
-	g.price = int(100 * math.Abs(1+rand.NormFloat64()))
-
 	var wg sync.WaitGroup
 	wg.Add(len(g.players))
 
