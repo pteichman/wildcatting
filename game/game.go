@@ -280,7 +280,7 @@ func (g *game) pressure(res []int) float64 {
 	// rate approaches the reservoir's fluid withdrawal rate at reservoir conditions.
 
 	// Reservoir engineers have often used pressure contour maps or some approximate
-	//  methods to determine field average reservoir pressure for p/z analysis.
+	// methods to determine field average reservoir pressure for p/z analysis.
 	// Usually, however, individual well pressures are based on extrapolation of
 	// pressure buildup tests or from long shut-in periods. In either case, the
 	// average pressure measured does not represent a point value, but rather is
