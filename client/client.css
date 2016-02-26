@@ -5,9 +5,13 @@ body {
 
 .screen {
     width: 970px;
-    height: 460px;
+    height: 442px;
     position: relative;
     color: white;
+}
+
+.player-name {
+    text-transform: uppercase;
 }
 
 #lobby {
@@ -35,6 +39,14 @@ body {
 }
 
 #survey {
+}
+
+#survey-scene {
+    float: left;
+}
+
+#survey-week {
+    float: right;
 }
 
 #scene {
@@ -99,7 +111,7 @@ body {
 }
 
 #report-prompt {
-    top: 320px;
+    top: 300px;
     width: 200px;
     margin: 0 auto;
     position: relative;
@@ -138,18 +150,24 @@ body {
 }
 
 #sell-title {
-    table-layout:fixed;
     width: 100%;
     height: auto;
     position:relative;
+    text-align: center;
+}
+
+#sell-title-player {
+    float: left;
 }
 
 #sell-title-price {
     text-align: center;
+    display:table;
+    margin:0 auto;
 }
 
 #sell-title-week {
-    text-align: right;
+    float: right;
 }
 
 #sell-table {

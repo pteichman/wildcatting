@@ -12,16 +12,17 @@
         <div id="lobby-prompt"><p>ANY KEY TO START</p></div>
     </div>
     <div id="survey" class="screen" style="display:none">
-        <div id="scene">East Texas, Gusher Age.  Oil is $1.33</div>
-        <div id="week"></div>
+        <div id="survey-header">
+            <span is="survey-scene">East Texas, Gusher Age.&nbsp;&nbsp;Oil is <span class="oil-price"></span>
+            <span id="survey-week">WEEK <span class="week-number"></span></span>
+        </div>
         <div id="field">
             <svg id="prob"></svg>
             <svg id="cost" style="display:none"></svg>
             <svg id="tax" style="display:none"></svg>
             <svg id="oil" style="display:none"></svg>
         </div>
-        <div id="fact">Texas is more than an area. Texas is an idea and an experience that
-             transcends present geographical boundaries.</div>
+        <div id="fact"></div>
     </div>
     <div id="report" class="screen" style="display:none">
         <div id=report-title>SURVEYOR'S REPORT</div>
@@ -45,11 +46,12 @@
         </div>
     </div>
     <div id="sell" class="screen" style="display:none">
-        <table id=sell-title><tr>
-            <td id="sell-title-player">BOB</td>
-            <td id="sell-title-price">$1.31 PER BARREL</td>
-            <td id="sell-title-week">WEEK 1</td></tr>
-        </table>
+        <div id=sell-title>
+            <span id="sell-title-week">WEEK <span class="week-number"></span></span>
+            <span id="sell-title-player" class="player-name"></span>
+            <span id="sell-title-price"><span class="oil-price"></span> PER BARREL</span>
+        </div>
+        <br>
         <table id="sell-table">
             <thead id="sell-table-headers">
                 <tr><th>X</th><th>Y</th><th>DEPTH</th><th></th><th>COST</th><th></th><th>TAX</th><th></th><th>INCOME</th><th></th><th>P&ampL</th></tr>

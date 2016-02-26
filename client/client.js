@@ -84,6 +84,12 @@ function lobby() {
     });
 }
 
+function smacks(cents, width) {
+  s = cents + '';
+  s = s.length >= 3 ? s : new Array(3 - s.length + 1).join(0) + s;
+  return "$" + s.slice(0, -2) + "." + s.slice(-2)
+}
+
 function survey() {
     d3.select("#survey").style("display", "block");
 
@@ -128,7 +134,10 @@ function survey() {
         .style("fill", function (d) { return d == 0 ? 'black' : oilColor(d); });
 
     d3.select("#fact").text(state.fact);
-    d3.select("#week").text("Week " + state.week)
+    d3.select("#week").text("Week " + state.week);
+    d3.selectAll(".player-name").text(state.players[0]);
+    d3.selectAll(".oil-price").text(smacks(state.price));
+    d3.selectAll(".week-number").text(state.week);
 
     d3.selectAll("rect[data-site='0'").attr("class", "cursor");
 
