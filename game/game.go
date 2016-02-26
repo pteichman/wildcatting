@@ -84,6 +84,71 @@ func (g *game) run() {
 	}
 }
 
+func (g *game) next() {
+	g.week++
+
+	// Oil and gas wells usually reach their maximum output shortly after completion.
+	// From that time, other than wells completed in water-drive reservoirs, they decline
+	// in production, the rapidity of decline depending on the output of the wells and on
+	// other factors governing their productivity. The production decline curve shows the
+	// amount of oil and gas produced per unit of time for several consecutive periods;
+	// if the conditions affecting the rate of production are not changed, the curve may
+	// be fairly regular, and, if projected, will furnish useful knowledge as to the future
+	// production of the well. By the aid of this knowledge the value of a property may be
+	// judged, and proper depletion and depreciation charges may be made on the books of
+	// the operating company.(Lewis 1918)
+	for s, d := range g.deeds {
+		if d.bit == 0 || d.bit != g.f.oil[s] || d.stop > 0 {
+			continue
+		}
+
+		// production considers reservoir pressure over time
+		var res []int
+		for r := range g.f.reservoir(s) {
+			res = append(res, r)
+		}
+
+		tot := float64(len(res))
+		for _, s := range res {
+			d := g.deeds[s]
+			if d == nil || d.bit == 0 || d.bit != g.f.oil[s] {
+				continue
+			}
+			until := d.stop
+			if until == 0 {
+				until = g.week
+			}
+
+			// production diminishes 33% per pump site week
+			tot -= 1.0 - math.Pow(0.666, float64(until-d.start))
+		}
+		pressure := tot / float64(len(res))
+
+		// FIXME aquafiers would need to be rolled into the previous loop,
+		// counteracting the pressure decreases as pumping continue. this should be
+		// tuned so without strong aquifiers, pressure reductions are devastating
+
+		// The aquifer strength also refers to how well the aquifer mitigates the reservoir's
+		// normal pressure decline. A strong aquifer refers to one in which the water-influx
+		// rate approaches the reservoir's fluid withdrawal rate at reservoir conditions.
+
+		// Reservoir engineers have often used pressure contour maps or some approximate
+		// methods to determine field average reservoir pressure for p/z analysis.
+		// Usually, however, individual well pressures are based on extrapolation of
+		// pressure buildup tests or from long shut-in periods. In either case, the
+		// average pressure measured does not represent a point value, but rather is
+		// the average value within the well’s effective drainage volume
+
+		// ramp up: capacity approaches 100 barrels per site @ 1.0 pressure
+		capacity := 100 * (1 - math.Pow(0.5, float64(g.week-d.start)))
+		output := int(math.Floor(pressure * capacity * float64(len(res))))
+		log.Printf("site %d capacity %f size %d output %d", s, capacity, len(res), output)
+
+		d.output = output
+		d.pnl += int(float64(d.output*g.price)/100) - g.f.tax[s]
+	}
+}
+
 func (g *game) Join(name string) int {
 	// we probably need to lock the players slice
 	p := len(g.players)
@@ -204,87 +269,33 @@ func week(g *game) stateFn {
 	close(done)
 	log.Printf("All %d players completed week %d", len(g.players), g.week)
 
-	for s, deed := range g.deeds {
-		if deed.bit == 0 || deed.bit != g.f.oil[s] || deed.stop > 0 {
-			continue
-		}
-
-		// production considers reservoir pressure over time
-		var res []int
-		for r := range g.f.reservoir(s) {
-			res = append(res, r)
-		}
-		// consider the pressure levels of this reservoir over time
-		pressure := g.pressure(res)
-		// 100 barrels per site @ 1.0 pressure
-		output := int(math.Floor(pressure * 100.0 * float64(len(res))))
-		gross := int(float64(deed.output*g.price) / 100)
-		log.Printf("site %d reservoir %d output %d pressure %f price %d gross %d",
-			s, res, deed.output, pressure, g.price, gross)
-
-		deed.output = output
-		deed.pnl += gross - g.f.tax[s]
-	}
+	g.next()
 
 	if g.week == 13 {
 		log.Println("Game over!")
 		return nil
 	}
 
-	g.week++
-
 	return week
 }
 
-// Oil and gas wells usually reach their maximum output shortly after completion.
-// From that time, other than wells completed in water-drive reservoirs, they decline
-// in production, the rapidity of decline depending on the output of the wells and on
-// other factors governing their productivity. The production decline curve shows the
-// amount of oil and gas produced per unit of time for several consecutive periods;
-// if the conditions affecting the rate of production are not changed, the curve may
-// be fairly regular, and, if projected, will furnish useful knowledge as to the future
-// production of the well. By the aid of this knowledge the value of a property may be
-// judged, and proper depletion and depreciation charges may be made on the books of
-// the operating company.(Lewis 1918)
 func (g *game) pressure(res []int) float64 {
 	tot := float64(len(res))
-
 	for _, s := range res {
 		d := g.deeds[s]
 		if d == nil || d.bit == 0 || d.bit != g.f.oil[s] {
 			continue
 		}
-
-		until := g.deeds[s].stop
+		until := d.stop
 		if until == 0 {
 			until = g.week
 		}
 
-		dim := (1.0 - math.Pow(0.66, float64(until-g.deeds[s].start)))
-		log.Printf("well at site %d has been active %d weeks; diminishing pressue %f", s, until-g.deeds[s].start, dim)
-
 		// production diminishes 33% per pump site week
-		tot -= dim
+		tot -= 1.0 - math.Pow(0.666, float64(until-d.start))
 	}
-	pressure := tot / float64(len(res))
+	return tot / float64(len(res))
 
-	log.Printf("Total reservoir pressure for %d is %f", res, pressure)
-	return pressure
-
-	// FIXME aquafiers would need to be rolled into the previous loop,
-	// counteracting the pressure decreases as pumping continue. this should be
-	// tuned so without strong aquifiers, pressure reductions are devastating
-
-	// The aquifer strength also refers to how well the aquifer mitigates the reservoir's
-	// normal pressure decline. A strong aquifer refers to one in which the water-influx
-	// rate approaches the reservoir's fluid withdrawal rate at reservoir conditions.
-
-	// Reservoir engineers have often used pressure contour maps or some approximate
-	// methods to determine field average reservoir pressure for p/z analysis.
-	// Usually, however, individual well pressures are based on extrapolation of
-	// pressure buildup tests or from long shut-in periods. In either case, the
-	// average pressure measured does not represent a point value, but rather is
-	// the average value within the well’s effective drainage volume
 }
 
 // survey is a player state machine function for handling player survey moves.
