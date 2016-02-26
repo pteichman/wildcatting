@@ -6,7 +6,7 @@
 *The easy-going rural life of East Texas changed drastically with the
 discovery of oil in 1930 and 1931 – years of hardship, scorn, luck and wealth which brought people, ideas, institutions and national attention to East Texas.*
 
-![The Daisy Bradford No. 3](wildcatting.jpg)
+![Gusher](wildcatting.jpg)
 
 ## API
 
