@@ -250,7 +250,7 @@ function drill() {
                 d3.select("#drill-depth").text(bit * 100);
                 d3.select("#drill-cost").text(state.cost[site] * bit);
 
-                // this is awkward. deeds should be a site->deed map
+                // this is awkward. on the server deeds are a site->deed map
                 for (var i=0; i < state.deeds.length; i++) {
                     if (state.deeds[i].site != site) {
                         continue;
