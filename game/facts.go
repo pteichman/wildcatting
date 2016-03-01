@@ -51,7 +51,7 @@ var facts = []string{
 	`The discovery of the Spindletop oil field had an almost incalculable effect on world history, as well as Texas history.`,
 	`Texas oil production was 836,039 barrels in 1900. In 1902, Spindletop alone produced more than 17 million barrels, or 94 percent of the state's production. As a result of the glut, oil prices dropped to an all-time low of 3 cents a barrel, while water in some boom towns sold for 5 cents a cup.`,
 	`Between 1902 and 1910, oil fever spread through North Central Texas, with finds at Brownwood, Petrolia and Wichita Falls.`,
-	`Ironically, the wealth of oil at Ranger, and elsewhere in the state, encouraged railroads to switch their locomotives from coal to oil and helped kill the coal-mining town of Thurber.`,
+	`The wealth of oil at Ranger and elsewhere in the state encouraged railroads to switch their locomotives from coal to oil and helped kill the coal-mining town of Thurber.`,
 	`Oil was found west of Burkburnett in Wichita County in 1912, followed by another oil field in the town itself in 1918. The feverish activity that followed inspired the 1940 movie Boom Town, starring Clark Gable, Spencer Tracy, Claudette Colbert and Hedy Lamarr.`,
 	`Unexpectedly heavy traffic on the often-unpaved streets created massive clouds of dust during dry weather – dust that invaded every corner and settled on every surface. In wet weather, the streets became vehicle-swallowing mudholes.`,
 	`In October 1930, the Daisy Bradford No. 3 well blew in near Turnertown and Joinerville in Rusk County, opening the East Texas field, the biggest field of all.`,

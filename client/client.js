@@ -1,5 +1,6 @@
-
-var players = ["bob","joe","jbz","peter","snorp"];
+// hardcoded for testing
+var game = 0;
+var player = 0;
 
 var probColor = d3.scale.quantize().domain([1, 100]).range(["#4575b4","#91bfdb","#e0f3f8","#fee090","#fc8d59","#d73027"]);
 var costColor = d3.scale.quantize().domain([10, 250]).range(["#4575b4","#91bfdb","#e0f3f8","#fee090","#fc8d59","#d73027"]);
@@ -9,17 +10,21 @@ var oilColor = d3.scale.quantize().domain([1, 9]).range(["#4d4d4d",,"#878787","#
 var state = {};
 
 var fsm = StateMachine.create({
-
     initial: 'lobby',
 
     events: [
-        { name: 'play', from: 'lobby', to: 'survey' },
-        { name: 'survey', from: 'survey', to: 'report' },
+        { name: 'done', from: 'lobby', to: 'survey' },
+        { name: 'done', from: 'survey', to: 'report' },
         { name: 'yes', from: 'report', to: 'drill' },
-        { name: 'no', from: 'report', to: 'wells' },
+        { name: 'done', from: 'report', to: 'wells' },
         { name: 'done', from: 'drill', to: 'wells' },
         { name: 'done', from: 'wells', to: 'score' },
         { name: 'done', from: 'score', to: 'survey' },
+        { name: 'survey', from: 'lobby', to: 'survey' },
+        { name: 'report', from: 'lobby', to: 'report' },
+        { name: 'drill', from: 'lobby', to: 'drill' },
+        { name: 'wells', from: 'lobby', to: 'wells' },
+        { name: 'score', from: 'lobby', to: 'score' },
     ],
 
     callbacks: {
@@ -60,31 +65,65 @@ var fsm = StateMachine.create({
     }
 });
 
-function lobby() {
-    d3.select("#lobby").style("display", "block");
+function moveURL() {
+    return "/game/" + game + '/player/' + player + '/';
+}
 
-    d3.select("#lobby-players")
-        .selectAll("p")
-        .data(players)
-        .enter()
-        .append("p")
-        .text(function(d) { return d; });
+function lobby() {
+    updateState();
+
+    function updateState() {
+        var poll;
+        d3.json("/game/" + game + "/")
+            .on("load", function(update) {
+                if (!update.started) {
+                    d3.select("#lobby").style("display", "block");
+                }
+
+                d3.select("#lobby-players")
+                    .selectAll("tr")
+                    .data(update.players)
+                    .enter()
+                    .append("tr")
+                    .selectAll("td")
+                    .data(function(d) { return d; })
+                    .enter()
+                    .append("td")
+                    .text(function(d) { return d; });
+
+                if (update.started) {
+                    clearTimeout(poll);
+
+                    d3.json(moveURL())
+                        .on("load", function(data) {
+                            state = data;
+                            fsm[state.name]()
+                        })
+                        .on("error", function(error) {
+                            console.log(error);
+                        })
+                        .get();
+                }
+            })
+            .on("error", function(error) {
+                console.log(error);
+            })
+            .get();
+        poll = setTimeout(updateState, 1000);
+    }
 
     Mousetrap.bind('space', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
-        d3.json("/game/0/player/0/")
-            .on("load", function(data) {
-                state = data;
-                fsm.play();
-            })
+        d3.json(moveURL())
+            .on("load", function(data) {} )
             .on("error", function(error) {
-                alert(error);
+                console.log(error);
             })
-            .post(JSON.stringify({done: true}));
+            .post(JSON.stringify(-1));
     });
 }
 
-function smacks(cents, width) {
+function toCurrency(cents, width) {
     s = cents + '';
     s = s.length >= 3 ? s : new Array(3 - s.length + 1).join(0) + s;
     return "$" + s.slice(0, -2) + "." + s.slice(-2)
@@ -135,9 +174,8 @@ function survey() {
 
     d3.select("#fact").text(state.fact);
     d3.select("#week").text("Week " + state.week);
-    d3.selectAll(".player-name").text(state.players[0]);
-    d3.selectAll(".oil-price").text(smacks(state.price));
-    d3.selectAll(".week-number").text(state.week);
+    d3.selectAll("#survey-price").text(toCurrency(state.price));
+    d3.selectAll("#survey-week").text(state.week);
 
     d3.selectAll("rect[data-site='0'").attr("class", "cursor");
 
@@ -163,16 +201,17 @@ function survey() {
     Mousetrap.bind('space', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
 
-        d3.json("/game/0/player/0/")
+        d3.json(moveURL())
             .on("load", function(data) {
                 state = data;
-                state.site = site; // bleh
-                fsm.survey();
+                if (state.name != 'survey') {
+                    fsm.done();
+                }
             })
             .on("error", function(error) {
-                alert(error);
+                console.log(error);
              })
-            .post(JSON.stringify({site: site}));
+            .post(JSON.stringify(site));
     });
 
     Mousetrap.bind('tab', function(e) {
@@ -220,52 +259,55 @@ function survey() {
 function report() {
     d3.select("#report").style("display", "block");
     d3.select("#report-site").text("X="+mod(state.site, 80)+"\tY="+Math.floor(state.site/80));
-    d3.select("#report-prob").text(state.prob[state.site] + "%");
-    d3.select("#report-cost").text("$\t" + state.cost[state.site]);
-    d3.select("#report-tax").text("$\t" + state.tax[state.site]);
+    d3.select("#report-prob").text(state.prob + "%");
+    d3.select("#report-cost").text("$\t" + state.cost);
+    d3.select("#report-tax").text("$\t" + state.tax);
 
     Mousetrap.bind('y', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
-        fsm.yes();
+        d3.json(moveURL())
+            .on("load", function(data) {
+                state = data;
+                fsm.yes();
+            })
+            .on("error", function(error) { console.log(error); })
+            .post(JSON.stringify(1));
     });
     Mousetrap.bind('n', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
-        fsm.no();
+        d3.json(moveURL())
+            .on("load", function(data) {
+                state = data;
+                fsm.done();
+            })
+            .on("error", function(error) { console.log(error); })
+            .post(JSON.stringify(0));
     });
 }
 
 function drill() {
-    d3.select("#drill").style("display", "block");
-
     advance();
+
+    d3.select("#drill").style("display", "block");
 
     var site = state.site;
     var bit = 0;
     function advance() {
-        d3.json("/game/0/player/0/")
+        d3.json(moveURL())
             .on("load", function(data) {
-                bit++;
                 state = data;
-
-                d3.select("#drill-depth").text(bit * 100);
-                d3.select("#drill-cost").text(state.cost[site] * bit);
-
-                // this is awkward. on the server deeds are a site->deed map
-                for (var i=0; i < state.deeds.length; i++) {
-                    if (state.deeds[i].site != site) {
-                        continue;
-                    }
-
-                    // split these and add DRY HOLE and gusher animations
-                    if (state.deeds[i].oil || bit == 9) {
-                        fsm.done();
-                    }
+                if (state.name != 'drill') {
+                    return fsm.done()
                 }
+                bit++;
+
+                d3.select("#drill-depth").text(state.depth);
+                d3.select("#drill-cost").text(state.cost);
             })
             .on("error", function(error) {
-                alert(error);
+                console.log(error);
              })
-            .post(JSON.stringify({}));
+            .post(JSON.stringify(1));
     }
 
     Mousetrap.bind('space', function(e) {
@@ -275,49 +317,52 @@ function drill() {
 
     Mousetrap.bind('q', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
-        d3.json("/game/0/player/0/")
+        d3.json(moveURL())
             .on("load", function(data) {
                 state = data;
                 fsm.done();
             })
-            .on("error", function(error) { alert(error); })
-            .post(JSON.stringify({done: true}));
+            .on("error", function(error) { console.log(error); })
+            .post(JSON.stringify(-1));
     });
 }
 
 function wells() {
+    d3.select("#wells-player").text(state.player)
+    d3.select("#wells-price").text(toCurrency(state.price))
+    d3.select("#wells-week").text(state.week)
     d3.select("#wells").style("display", "block");
 
     function siteData(d) {
-        var depth = d.oil > 0 ? (d.oil * 100): "";
         var x = mod(d.site, 80);
         var y = Math.floor(d.site/80);
-        var tax = state.tax[d.site];
-        var data = [x, y, depth, "$", d.cost, "$", tax, "$", d.income, "$", d.pnl]
-        console.log(data);
+        var data = [x, y, d.depth, "$", d.cost, "$", d.tax, "$", d.income, "$", d.pnl]
         return data;
     }
 
     d3.select("#wells-table tbody")
         .selectAll("tr")
-        .data(state.deeds)
+        .data(state.wells, function (d) { return d.week } )
         .enter()
         .append("tr")
         .selectAll("td")
         .data(siteData)
         .enter()
         .append("td")
-        .text(function(d) { return d; });
+        .text(function(d) { return d; })
+        .order();
 
     Mousetrap.bind('q', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
-        d3.json("/game/0/player/0/")
+        d3.json(moveURL())
             .on("load", function(data) {
                 state = data;
-                fsm.done();
+                if (state.name != 'wells') {
+                    fsm.done();
+                }
             })
             .on("error", function(error) { alert(error); })
-            .post(JSON.stringify({done: true}));
+            .post(JSON.stringify(-1));
     });
 }
 
@@ -325,7 +370,15 @@ function score() {
     d3.select("#score").style("display", "block");
     Mousetrap.bind('space', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
-        fsm.done();
+        d3.json(moveURL())
+            .on("load", function(data) {
+                state = data;
+                if (state.name != 'score') {
+                    fsm.done();
+                }
+            })
+            .on("error", function(error) { alert(error); })
+            .post(JSON.stringify(-1));
     });
 }
 

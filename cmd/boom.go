@@ -1,8 +1,8 @@
 package main
 
 import (
-	"boomtown/game"
 	"fmt"
+	"wildcatting/game"
 )
 
 func main() {

@@ -3,7 +3,6 @@ package game
 import (
 	"fmt"
 	"testing"
-	"time"
 )
 
 type testGame struct {
@@ -80,19 +79,19 @@ func TestGame(t *testing.T) {
 	g.Move(Move{Done: true})
 
 	for i, tw := range tg.weeks {
-		time.Sleep(time.Millisecond)
+		week := i + 1
 
-		w := i + 1
-
-		if g.week != w {
-			t.Errorf("expect week %d; got %d", w, g.week)
+		if g.week != week {
+			t.Errorf("expect week %d; got %d", week, g.week)
 			return
 		}
 
 		// surveys
 		for p, s := range tw.surveys {
 			fmt.Printf("move <- Move{PlayerID: %d, SiteID: %d}\n", p, s)
-			g.Move(Move{PlayerID: p, SiteID: s})
+			update := g.Move(Move{PlayerID: p, SiteID: s})
+
+			// update from a survey move should be the survey report
 
 		}
 
@@ -126,8 +125,8 @@ func TestGame(t *testing.T) {
 				t.Errorf("drilling (week %d player %d site %d): expect bit %d; got %d", g.week, p, s, n, g.deeds[s].bit)
 			}
 
-			if tw.drills[p] > 0 && g.deeds[s].start != g.week {
-				t.Errorf("drilling (week %d player %d site %d): expect start %d; got %d", g.week, p, s, g.week, g.deeds[s].start)
+			if tw.drills[p] > 0 && g.deeds[s].week != g.week {
+				t.Errorf("drilling (week %d player %d site %d): expect start %d; got %d", g.week, p, s, g.week, g.deeds[s].week)
 			}
 		}
 

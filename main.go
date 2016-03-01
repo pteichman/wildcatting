@@ -1,24 +1,18 @@
 package main
 
 import (
-	"boomtown/game"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
+	"wildcatting/game"
 
 	"github.com/gorilla/mux"
 )
 
 type handler struct {
 	games []game.Game
-	move  []chan<- game.Move
-}
-
-type Move struct {
-	SiteID int  `json:"site"`
-	Done   bool `json:"done"`
 }
 
 func main() {
@@ -42,6 +36,7 @@ func (h *handler) newRouter() *mux.Router {
 	var routes = []route{
 		route{"POST", "/game/", h.postGame},
 		route{"POST", "/game/{gid:[0-9]+}/", h.postGameID},
+		route{"GET", "/game/{gid:[0-9]+}/", h.getGameID},
 		route{"POST", "/game/{gid:[0-9]+}/player/{pid:[0-9]+}/", h.postPlayerID},
 		route{"GET", "/game/{gid:[0-9]+}/player/{pid:[0-9]+}/", h.getPlayerID},
 	}
@@ -73,7 +68,6 @@ func (h *handler) postGame(w http.ResponseWriter, r *http.Request) {
 	log.Println("Created game", gameID)
 }
 
-// join game
 func (h *handler) postGameID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	gameID, err := strconv.Atoi(vars["gid"])
@@ -81,6 +75,8 @@ func (h *handler) postGameID(w http.ResponseWriter, r *http.Request) {
 		// mux should guarantee a parsable int
 		panic(err)
 	}
+
+	g := h.games[gameID]
 
 	var name string
 	decoder := json.NewDecoder(r.Body)
@@ -90,12 +86,29 @@ func (h *handler) postGameID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	playerID := h.games[gameID].Join(name)
+	playerID := g.Join(name)
 	if _, err := w.Write([]byte(fmt.Sprintf("%d", playerID))); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	log.Printf("\"%s\" joined game %d as player %d", name, gameID, playerID)
+}
+
+func (h *handler) getGameID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	gameID, err := strconv.Atoi(vars["gid"])
+	if err != nil {
+		// mux should guarantee a parsable int
+		panic(err)
+	}
+	update := h.games[gameID].State()
+	js, err := json.Marshal(update)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(js)
 }
 
 // move making... starting, surveying, drilling, selling
@@ -115,7 +128,7 @@ func (h *handler) postPlayerID(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
-	var mv Move
+	var mv int
 	decoder := json.NewDecoder(r.Body)
 	err = decoder.Decode(&mv)
 	if err != nil {
@@ -124,7 +137,7 @@ func (h *handler) postPlayerID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	g := h.games[gameID]
-	update := g.Move(game.Move{playerID, mv.SiteID, mv.Done})
+	update := g.Move(playerID, mv)
 
 	js, err := json.Marshal(update)
 	if err != nil {

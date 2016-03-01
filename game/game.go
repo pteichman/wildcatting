@@ -10,56 +10,26 @@ import (
 
 type Game interface {
 	Join(string) int
-	Move(Move) *State
-	View(int) *State
-}
-
-// State holds the player's restricted view of the game.
-type State struct {
-	Players []string `json:"players"`
-	Week    int      `json:"week"`
-	Price   int      `json:"price"`
-	Prob    []int    `json:"prob"`
-	Cost    []int    `json:"cost"`
-	Tax     []int    `json:"tax"`
-	Oil     []int    `json:"oil"`
-	Deeds   []Deed   `json:"deeds"`
-	Fact    string   `json:"fact"`
-}
-
-// Deed holds the player's view of an owned site and associated information.
-type Deed struct {
-	SiteID int  `json:"site"`
-	Owner  int  `json:"owner"`
-	Sold   bool `json:"sold"`
-	Oil    int  `json:"oil"`
-	Cost   int  `json:"cost"`
-	Income int  `json:"income"`
-	PNL    int  `json:"pnl"`
-}
-
-// Move is a player's requested game play move,
-// the interpretation of which is context sensitvie.
-type Move struct {
-	PlayerID int
-	SiteID   int
-	Done     bool
+	State() View
+	Move(int, int) View
+	View(int) View
 }
 
 type game struct {
-	f       *field
-	week    int
-	deeds   map[int]*deed // site id to ownership record
-	price   int           // oil price in cents
-	players []string      // id indexed player names
-	turn    int           // next surveying turn (which much happens in order)
-	move    chan Move
-	update  []chan *State
+	f          *field
+	week       int
+	deeds      map[int]*deed // site id to ownership record
+	price      int           // oil price in cents
+	players    []string      // id indexed player names
+	turn       int           // next surveying turn (which much happens in order)
+	move       chan int
+	clientMove []chan int
+	clientView []chan View
 }
 
 type deed struct {
 	player int
-	start  int // week a well was bought. 0 if no well built.
+	week   int // week a well was bought.
 	stop   int // week a well was sold. 0 if still active.
 	bit    int // depth of the drillbit.
 	output int // current output in barrels - though it seems this should be dynamic
@@ -72,7 +42,7 @@ func New() Game {
 	g := &game{
 		f:     newField(),
 		deeds: make(map[int]*deed),
-		move:  make(chan Move),
+		move:  make(chan int),
 	}
 
 	go g.run()
@@ -119,7 +89,7 @@ func (g *game) nextWeek() {
 
 			// pressure diminishes 33% per pump site week. with a large enough
 			// reservoir this is subtle but for a small reservoir it's devastating
-			tot -= 1.0 - math.Pow(0.666, float64(until-d.start))
+			tot -= 1.0 - math.Pow(0.666, float64(until-d.week))
 		}
 		pressure := tot / float64(len(res))
 
@@ -139,9 +109,9 @@ func (g *game) nextWeek() {
 		// the average value within the well’s effective drainage volume
 
 		// ramp up: capacity approaches 100 barrels per site @ 1.0 pressure
-		capacity := 100 * (1 - math.Pow(0.5, float64(g.week-d.start)))
+		capacity := 100 * (1 - math.Pow(0.5, float64(g.week-d.week)))
 		output := int(math.Floor(pressure * capacity * float64(len(res))))
-		log.Printf("site %d capacity %f size %d output %d", s, capacity, len(res), output)
+		log.Printf("reservoir %d size %d capacity %f pressure %f size %d output %d", res, len(res), capacity, pressure, len(res), output)
 
 		d.output = output
 		d.pnl += int(float64(d.output*g.price)/100) - g.f.tax[s]
@@ -150,131 +120,94 @@ func (g *game) nextWeek() {
 
 func (g *game) Join(name string) int {
 	// we probably need to lock the players slice
-	p := len(g.players)
+	playerID := len(g.players)
 	g.players = append(g.players, name)
+	g.clientMove = append(g.clientMove, make(chan int))
+	g.clientView = append(g.clientView, make(chan View))
 
-	g.update = append(g.update, make(chan *State))
-
-	return p
+	return playerID
 }
 
-func (g *game) Move(mv Move) *State {
-	g.move <- mv
-	return <-g.update[mv.PlayerID]
+func (g *game) Move(playerID, index int) View {
+	// this is goofy but works for now. before the game is started
+	// the lobby state is listening for moves on a single
+	// game wide channel. this should be the game owner channel.
+	if g.week == 0 {
+		g.move <- playerID
+	} else {
+		g.clientMove[playerID] <- index
+	}
+	return <-g.clientView[playerID]
 }
 
-// View returns a players' View of the oil field state.
-func (g *game) View(playerID int) *State {
-	var deeds []Deed
-	for s, deed := range g.deeds {
-		d := Deed{
-			SiteID: s,
-			Owner:  deed.player,
-			Sold:   deed.stop > 0,
-			Cost:   g.f.cost[s] * deed.bit, // cost is in cents and bit is in 100 ft increments so they cancel out
-			Income: deed.output * g.price / 100,
-			PNL:    deed.pnl,
-		}
-		// players only know about oil if it was reached with the bit
-		if g.f.oil[s] > 0 && deed.bit == g.f.oil[s] {
-			d.Oil = g.f.oil[s]
-		}
+// View returns a JSON serializable object representing the player's current game state.
+func (g *game) View(playerID int) View {
+	// noop returns the view without advancing the state
+	go func() {
+		g.clientMove[playerID] <- noop
+	}()
+	return <-g.clientView[playerID]
+}
 
-		deeds = append(deeds, d)
-	}
-
-	return &State{
-		Players: g.players,
-		Week:    g.week,
-		Price:   g.price,
-		Prob:    g.f.prob,
-		Cost:    g.f.cost,
-		Tax:     g.f.tax,
-		Oil:     g.f.oil,
-		Deeds:   deeds,
-		Fact:    facts[rand.Intn(len(facts))],
-	}
+// State returns the high-level state of the game: who has joined and has it started.
+func (g *game) State() View {
+	return struct {
+		Players []string `json:"players"`
+		Started bool     `json:"started"`
+	}{g.players, g.week > 0}
 }
 
 // game state machine func
 type stateFn func(*game) stateFn
 
-// player turn state machine func
-type playerFn func(g *game, move <-chan Move) playerFn
-
-// lobby is the game state machine function for handling
-// joins before the start of the game.
+// lobby is the game state machine function for handling joins before the start of the game.
 func lobby(g *game) stateFn {
-	// FIXME maybe we should go to the lobby every round (showing score summary)
-	// giving a chance for late joins to come in... "start" then becomes
-	// "begin week" and i guess the game owner would be responsible for it
-
 	// wait for player zero to start the game
 	for {
-		mv := <-g.move
+		playerID := <-g.move
 
-		if mv.PlayerID != 0 {
-			log.Printf("Game has not started; ignoring non-owner player %d", mv.PlayerID)
-			g.update[mv.PlayerID] <- nil
+		if playerID != 0 {
+			log.Printf("ignoring non-owner player %d", playerID)
+			g.clientView[playerID] <- nil
 			continue
 		}
-		if !mv.Done {
-			log.Println("Game has not started; owner must set done to start")
-			g.update[mv.PlayerID] <- nil
-			continue
-		}
-		log.Printf("Owner started game with %d players", len(g.players))
 
+		log.Printf("started game with %d players", len(g.players))
 		g.nextWeek()
 
-		g.update[mv.PlayerID] <- g.View(mv.PlayerID)
 		break
 	}
 
-	return week
+	return playWeek
 }
 
 // week is the game state machine function for handling a single week's gameplay.
-func week(g *game) stateFn {
+func playWeek(g *game) stateFn {
 	var wg sync.WaitGroup
 	wg.Add(len(g.players))
 
 	// run a state machine for each player in individual go routines
-	var move []chan Move
+	// var move []chan int
 	for p := 0; p < len(g.players); p++ {
-		move = append(move, make(chan Move))
+		// move = append(move, make(chan int))
 		go func(playerID int) {
 			for state := survey; state != nil; {
-				state = state(g, move[playerID])
+				state = state(g, playerID)
 			}
 			wg.Done()
 		}(p)
 	}
-
-	// direct incoming Moves to a player specific channel
-	done := make(chan struct{})
-	go func() {
-		for {
-			select {
-			case mv := <-g.move:
-				move[mv.PlayerID] <- mv
-			case <-done:
-				return
-			}
-		}
-	}()
 	wg.Wait()
-	close(done)
-	log.Printf("All %d players completed week %d", len(g.players), g.week)
 
+	log.Printf("all %d players completed week %d", len(g.players), g.week)
 	g.nextWeek()
 
 	if g.week == 13 {
-		log.Println("Game over!")
+		log.Println("game over!")
 		return nil
 	}
 
-	return week
+	return playWeek
 }
 
 func (g *game) pressure(res []int) float64 {
@@ -290,94 +223,7 @@ func (g *game) pressure(res []int) float64 {
 		}
 
 		// production diminishes 33% per pump site week
-		tot -= 1.0 - math.Pow(0.666, float64(until-d.start))
+		tot -= 1.0 - math.Pow(0.666, float64(until-d.week))
 	}
 	return tot / float64(len(res))
-
-}
-
-// survey is a player state machine function for handling player survey moves.
-func survey(g *game, move <-chan Move) playerFn {
-	for {
-		mv := <-move
-
-		if mv.PlayerID != g.turn {
-			log.Printf("Waiting for player %d to survey; ignoring player %d", g.turn, mv.PlayerID)
-			g.update[mv.PlayerID] <- nil
-			continue
-		}
-
-		if _, ok := g.deeds[mv.SiteID]; ok {
-			log.Printf("Site %d already surveyed; ignoring player %d", mv.SiteID, mv.PlayerID)
-			g.update[mv.PlayerID] <- nil
-			continue
-		}
-
-		log.Printf("Player %d surveying site %d", mv.PlayerID, mv.SiteID)
-		g.deeds[mv.SiteID] = &deed{player: mv.PlayerID}
-		g.turn = (g.turn + 1) % len(g.players)
-
-		g.update[mv.PlayerID] <- g.View(mv.PlayerID)
-
-		return drillSite(mv.SiteID)
-	}
-}
-
-// drill returns a player state machine function for drilling a specific site
-func drillSite(siteID int) playerFn {
-	return func(g *game, move <-chan Move) playerFn {
-		oil := g.f.oil[siteID]
-		deed := g.deeds[siteID]
-		for mv := range move {
-			if mv.Done {
-				log.Printf("Player %d done drilling site %d", mv.PlayerID, siteID)
-				g.update[mv.PlayerID] <- g.View(mv.PlayerID)
-				break
-			}
-
-			log.Printf("Player %d drilling site %d with bit %d", mv.PlayerID, siteID, deed.bit)
-			deed.start = g.week
-			deed.bit++
-
-			if oil > 0 && deed.bit == oil {
-				log.Printf("Player %d struck oil at depth %d", mv.PlayerID, deed.bit)
-				g.update[mv.PlayerID] <- g.View(mv.PlayerID)
-				break
-			}
-			if deed.bit == maxOil {
-				log.Printf("DRY HOLE for player %d", mv.PlayerID)
-				g.update[mv.PlayerID] <- g.View(mv.PlayerID)
-				break
-			}
-			g.update[mv.PlayerID] <- g.View(mv.PlayerID)
-		}
-		return sell
-	}
-}
-
-// sell is a player state machine function for handling sales
-// of wells before the end of the turn
-func sell(g *game, move <-chan Move) playerFn {
-	for mv := range move {
-		if mv.Done {
-			log.Printf("Player %d done selling", mv.PlayerID)
-			g.update[mv.PlayerID] <- g.View(mv.PlayerID)
-			break
-		}
-		deed := g.deeds[mv.SiteID]
-		if deed == nil || deed.player != mv.PlayerID {
-			log.Printf("Ignoring sale for site %d; player %d does not own deed", mv.SiteID, mv.PlayerID)
-			g.update[mv.PlayerID] <- g.View(mv.PlayerID)
-			continue
-		}
-		if deed.stop > 0 {
-			log.Printf("Ignoring sale for site %d; already sold in week %d", mv.SiteID, deed.stop)
-			g.update[mv.PlayerID] <- g.View(mv.PlayerID)
-			continue
-		}
-		log.Printf("Player %d selling site %d", mv.PlayerID, mv.SiteID)
-		g.deeds[mv.SiteID].stop = g.week
-		g.update[mv.PlayerID] <- g.View(mv.PlayerID)
-	}
-	return nil
 }

@@ -14,5 +14,5 @@ discovery of oil in 1930 and 1931 – years of hardship, scorn, luck and wealth 
     GET     /game/                     - list games
     GET     /game/<id>/                - game summary
     POST    /game/<id>/                - join -> playerID
-    POST    /game/<id>/player/<id>/    - start/survey/drill/sell -> delta
+    POST    /game/<id>/player/<id>/    - start/survey/drill/sell -> player state
     GET     /game/<id>/player/<id>/    - player state
