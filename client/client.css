@@ -143,46 +143,46 @@ body {
     text-align: right;
 }
 
-#sell {
+#wells {
     color: black;
     background-color: #00c120;
     position: relative;
 }
 
-#sell-title {
+#wells-title {
     width: 100%;
     height: auto;
     position:relative;
     text-align: center;
 }
 
-#sell-title-player {
+#wells-title-player {
     float: left;
 }
 
-#sell-title-price {
+#wells-title-price {
     text-align: center;
     display:table;
     margin:0 auto;
 }
 
-#sell-title-week {
+#wells-title-week {
     float: right;
 }
 
-#sell-table {
+#wells-table {
     table-layout:fixed;
     width: 100%;
     height: auto;
     position:relative;
 }
 
-#sell-table thead th {
+#wells-table thead th {
     font-weight: normal;
     text-align: right;
 }
 
-#sell-table td {
+#wells-table td {
     text-align: right;
 }
 

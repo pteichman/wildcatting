@@ -16,9 +16,9 @@ var fsm = StateMachine.create({
         { name: 'play', from: 'lobby', to: 'survey' },
         { name: 'survey', from: 'survey', to: 'report' },
         { name: 'yes', from: 'report', to: 'drill' },
-        { name: 'no', from: 'report', to: 'sell' },
-        { name: 'done', from: 'drill', to: 'sell' },
-        { name: 'done', from: 'sell', to: 'score' },
+        { name: 'no', from: 'report', to: 'wells' },
+        { name: 'done', from: 'drill', to: 'wells' },
+        { name: 'done', from: 'wells', to: 'score' },
         { name: 'done', from: 'score', to: 'survey' },
     ],
 
@@ -28,7 +28,7 @@ var fsm = StateMachine.create({
         onentersurvey: survey,
         onenterreport: report,
         onenterdrill: drill,
-        onentersell: sell,
+        onenterwells: wells,
         onenterscore: score,
 
         onleavelobby: function() {
@@ -48,9 +48,9 @@ var fsm = StateMachine.create({
             d3.select("#drill").style("display", "none");
             Mousetrap.reset();
         },
-        onleavesell: function() {
-            d3.select("#sell").style("display", "none");
-            d3.select("#sell-table tbody").html("");
+        onleavewells: function() {
+            d3.select("#wells").style("display", "none");
+            d3.select("#wells-table tbody").html("");
             Mousetrap.reset();
         },
         onleavescore: function() {
@@ -285,8 +285,8 @@ function drill() {
     });
 }
 
-function sell() {
-    d3.select("#sell").style("display", "block");
+function wells() {
+    d3.select("#wells").style("display", "block");
 
     function siteData(d) {
         var depth = d.oil > 0 ? (d.oil * 100): "";
@@ -298,7 +298,7 @@ function sell() {
         return data;
     }
 
-    d3.select("#sell-table tbody")
+    d3.select("#wells-table tbody")
         .selectAll("tr")
         .data(state.deeds)
         .enter()
