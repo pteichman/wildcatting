@@ -28,8 +28,8 @@ func survey(g *game, playerID int) playFn {
 			continue
 		}
 
-		if playerID != g.turn {
-			log.Printf("waiting for player %d to survey; ignoring player %d", g.turn, playerID)
+		if playerID != g.surveyTurn {
+			log.Printf("waiting for player %d to survey; ignoring player %d", g.surveyTurn, playerID)
 			continue
 		}
 
@@ -40,7 +40,7 @@ func survey(g *game, playerID int) playFn {
 
 		log.Printf("player %d surveying site %d", playerID, mv)
 		g.deeds[mv] = &deed{player: playerID, week: g.week}
-		g.turn = (g.turn + 1) % len(g.players)
+		g.surveyTurn = (g.surveyTurn + 1) % len(g.players)
 
 		return report(mv)
 	}

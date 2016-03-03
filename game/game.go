@@ -18,10 +18,10 @@ type Game interface {
 type game struct {
 	f          *field
 	week       int
-	deeds      map[int]*deed // site id to ownership record
+	deeds      map[int]*deed // site id to deed
 	price      int           // oil price in cents
 	players    []string      // id indexed player names
-	turn       int           // next surveying turn (which much happens in order)
+	surveyTurn int           // next survey turn (must happen in order)
 	lobbyMove  chan int
 	clientMove []chan int
 	clientView []chan View
@@ -29,11 +29,11 @@ type game struct {
 
 type deed struct {
 	player int
-	week   int // week a well was bought.
-	stop   int // week a well was sold. 0 if still active.
-	bit    int // depth of the drillbit.
-	output int // current output in barrels - though it seems this should be dynamic
-	pnl    int // profit & loss
+	week   int
+	stop   int
+	bit    int
+	output int
+	pnl    int
 }
 
 func New() Game {
