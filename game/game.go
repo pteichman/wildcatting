@@ -22,7 +22,7 @@ type game struct {
 	price      int           // oil price in cents
 	players    []string      // id indexed player names
 	turn       int           // next surveying turn (which much happens in order)
-	move       chan int
+	lobbyMove  chan int
 	clientMove []chan int
 	clientView []chan View
 }
@@ -40,9 +40,9 @@ func New() Game {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	g := &game{
-		f:     newField(),
-		deeds: make(map[int]*deed),
-		move:  make(chan int),
+		f:         newField(),
+		deeds:     make(map[int]*deed),
+		lobbyMove: make(chan int),
 	}
 
 	go g.run()
@@ -133,7 +133,7 @@ func (g *game) Move(playerID, index int) View {
 	// the lobby state is listening for moves on a single
 	// game wide channel. this should be the game owner channel.
 	if g.week == 0 {
-		g.move <- playerID
+		g.lobbyMove <- playerID
 	} else {
 		g.clientMove[playerID] <- index
 	}
@@ -164,7 +164,7 @@ type stateFn func(*game) stateFn
 func lobby(g *game) stateFn {
 	// wait for player zero to start the game
 	for {
-		playerID := <-g.move
+		playerID := <-g.lobbyMove
 
 		if playerID != 0 {
 			log.Printf("ignoring non-owner player %d", playerID)
