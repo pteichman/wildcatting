@@ -1,8 +1,6 @@
 package game
 
 import (
-	"bytes"
-	"fmt"
 	"math"
 	"math/rand"
 )
@@ -19,10 +17,6 @@ const (
 )
 
 type field struct{ prob, cost, oil, tax []int }
-
-func NewField() fmt.Stringer {
-	return newField()
-}
 
 func newField() *field {
 	prob := fill(1+rand.Intn(4), minProb, maxProb, 0.05, 0.25, false) // a few well formed peaks
@@ -105,32 +99,6 @@ func probFilter(vals, p []int) []int {
 		filtered[i] = v
 	}
 	return filtered
-}
-
-// String returns the oil field as a string.
-func (f *field) String() string {
-
-	var buf bytes.Buffer
-	buf.WriteByte('\n')
-	for s := 0; s < 24*80; s++ {
-		if s%80 == 0 {
-			buf.WriteByte('\n')
-		}
-		buf.WriteString("\033[1;")
-		if f.prob[s] > 90 {
-			buf.WriteString("31")
-		} else if f.prob[s] > 80 {
-			buf.WriteString("32")
-		} else if f.prob[s] > 60 {
-			buf.WriteString("34")
-		} else if f.prob[s] > 20 {
-			buf.WriteString("36")
-		} else {
-			buf.WriteString("28")
-		}
-		buf.WriteString("m█\033[0m")
-	}
-	return buf.String()
 }
 
 func neighbors(s int) <-chan int {
