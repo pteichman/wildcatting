@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"wildcatting/game"
 
+	"github.com/9r33n/wildcatting/game"
 	"github.com/gorilla/mux"
 )
 
