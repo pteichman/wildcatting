@@ -20,9 +20,9 @@ type playFn func(*game, int) playFn
 // return this player's function for handling survey moves
 func survey(g *game, playerID int) playFn {
 	for {
-		g.clientView[playerID] <- surveyView(g, playerID)
+		g.view[playerID] <- surveyView(g, playerID)
 
-		mv := <-g.clientMove[playerID]
+		mv := <-g.move[playerID]
 
 		if mv == noop {
 			continue
@@ -49,9 +49,11 @@ func survey(g *game, playerID int) playFn {
 func report(siteID int) playFn {
 	// return this player's function for surveyor's report
 	return func(g *game, playerID int) playFn {
+		log.Print("report state player", playerID)
 		for {
-			g.clientView[playerID] <- reportView(g, playerID, siteID)
-			mv := <-g.clientMove[playerID]
+			g.view[playerID] <- reportView(g, playerID, siteID)
+			mv := <-g.move[playerID]
+
 			if mv == noop {
 				continue
 			}
@@ -72,8 +74,9 @@ func drill(siteID int) playFn {
 		deed := g.deeds[siteID]
 
 		for {
-			g.clientView[playerID] <- view(g, playerID)
-			mv := <-g.clientMove[playerID]
+			g.view[playerID] <- view(g, playerID)
+			mv := <-g.move[playerID]
+
 			if mv == noop {
 				continue
 			}
@@ -96,8 +99,9 @@ func drill(siteID int) playFn {
 // return this player's function for handling well sales
 func wells(g *game, playerID int) playFn {
 	for {
-		g.clientView[playerID] <- wellsView(g, playerID)
-		mv := <-g.clientMove[playerID]
+		g.view[playerID] <- wellsView(g, playerID)
+		mv := <-g.move[playerID]
+
 		if mv == noop {
 			continue
 		}
@@ -124,8 +128,7 @@ func wells(g *game, playerID int) playFn {
 
 // return this player's function for showing weekly score
 func score(g *game, playerID int) playFn {
-	g.clientView[playerID] <- scoreView(g, playerID)
-
-	<-g.clientMove[playerID]
+	g.view[playerID] <- scoreView(g, playerID)
+	<-g.move[playerID]
 	return nil
 }

@@ -5,7 +5,14 @@ import "math/rand"
 // View is a generic type for JSON serializable data representing the client state.
 type View interface{}
 
-type viewFn func(*game, int) View
+func view(g *game) View {
+	return struct {
+		Players []string `json:"players"`
+		Started bool     `json:"started"`
+	}{g.players, g.week > 0}
+}
+
+type playerViewFn func(*game, int) View
 
 func surveyView(g *game, playerID int) View {
 	return struct {
@@ -30,7 +37,7 @@ func reportView(g *game, playerID, siteID int) View {
 	}{"report", siteID, g.f.prob[siteID], g.f.cost[siteID], g.f.tax[siteID]}
 }
 
-func drillView(siteID int) viewFn {
+func drillView(siteID int) playerViewFn {
 	return func(g *game, playerID int) View {
 		depth := g.deeds[siteID].bit * 100
 		cost := g.deeds[siteID].bit * g.f.cost[siteID]

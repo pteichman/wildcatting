@@ -16,15 +16,17 @@ type Game interface {
 }
 
 type game struct {
+	players    []string
+	start      chan bool
+	join       chan string
+	joinID     chan int
+	move       []chan int
+	view       []chan View
 	f          *field
 	week       int
-	deeds      map[int]*deed // site id to deed
-	price      int           // oil price in cents
-	players    []string      // id indexed player names
-	surveyTurn int           // next survey turn (must happen in order)
-	lobbyMove  chan int
-	clientMove []chan int
-	clientView []chan View
+	deeds      map[int]*deed
+	price      int
+	surveyTurn int
 }
 
 type deed struct {
@@ -40,9 +42,11 @@ func New() Game {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	g := &game{
-		f:         newField(),
-		deeds:     make(map[int]*deed),
-		lobbyMove: make(chan int),
+		f:      newField(),
+		start:  make(chan bool),
+		join:   make(chan string),
+		joinID: make(chan int),
+		deeds:  make(map[int]*deed),
 	}
 
 	go g.run()
@@ -56,42 +60,31 @@ func (g *game) run() {
 }
 
 func (g *game) Join(name string) int {
-	// we probably need to lock the players slice
-	playerID := len(g.players)
-	g.players = append(g.players, name)
-	g.clientMove = append(g.clientMove, make(chan int))
-	g.clientView = append(g.clientView, make(chan View))
-
-	return playerID
+	g.join <- name
+	return <-g.joinID
 }
 
-func (g *game) Move(playerID, index int) View {
-	// this is goofy but works for now. before the game is started
-	// the lobby state is listening for moves on a single
-	// game wide channel. this should be the game owner channel.
-	if g.week == 0 {
-		g.lobbyMove <- playerID
+func (g *game) Move(playerID, move int) View {
+	if playerID == 0 && g.week == 0 {
+		g.start <- true
 	} else {
-		g.clientMove[playerID] <- index
+		g.move[playerID] <- move
 	}
-	return <-g.clientView[playerID]
+	return <-g.view[playerID]
 }
 
 // View returns a JSON serializable object representing the player's current game state.
 func (g *game) View(playerID int) View {
 	// noop returns the view without advancing the state
 	go func() {
-		g.clientMove[playerID] <- noop
+		g.move[playerID] <- noop
 	}()
-	return <-g.clientView[playerID]
+	return <-g.view[playerID]
 }
 
 // State returns the high-level state of the game: who has joined and has it started.
 func (g *game) State() View {
-	return struct {
-		Players []string `json:"players"`
-		Started bool     `json:"started"`
-	}{g.players, g.week > 0}
+	return view(g)
 }
 
 // game state machine func
@@ -99,21 +92,25 @@ type stateFn func(*game) stateFn
 
 // lobby is the game state machine function for handling joins before the start of the game.
 func lobby(g *game) stateFn {
-	// wait for player zero to start the game
+
+Loop:
 	for {
-		playerID := <-g.lobbyMove
-
-		if playerID != 0 {
-			log.Printf("ignoring non-owner player %d", playerID)
-			g.clientView[playerID] <- nil
-			continue
+		select {
+		case name := <-g.join:
+			playerID := len(g.players)
+			g.players = append(g.players, name)
+			g.move = append(g.move, make(chan int))
+			g.view = append(g.view, make(chan View))
+			g.joinID <- playerID
+			log.Printf("name %s joined as player %d", name, playerID)
+		case <-g.start:
+			break Loop
 		}
-
-		log.Printf("started game with %d players", len(g.players))
-		g.nextWeek()
-
-		break
 	}
+	close(g.join)
+
+	log.Printf("starting game with %d players", len(g.players))
+	g.nextWeek()
 
 	return playWeek
 }
@@ -124,14 +121,12 @@ func playWeek(g *game) stateFn {
 	wg.Add(len(g.players))
 
 	// run a state machine for each player in individual go routines
-	// var move []chan int
 	for p := 0; p < len(g.players); p++ {
-		// move = append(move, make(chan int))
 		go func(playerID int) {
+			defer wg.Done()
 			for state := survey; state != nil; {
 				state = state(g, playerID)
 			}
-			wg.Done()
 		}(p)
 	}
 	wg.Wait()
