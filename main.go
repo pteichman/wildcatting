@@ -150,8 +150,14 @@ func (h *handler) postPlayerID(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) getPlayerID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	gameID, _ := strconv.Atoi(vars["gid"])
-	playerID, _ := strconv.Atoi(vars["pid"])
+	gameID, err := strconv.Atoi(vars["gid"])
+	if err != nil {
+		panic(err)
+	}
+	playerID, err := strconv.Atoi(vars["pid"])
+	if err != nil {
+		panic(err)
+	}
 
 	g := h.games[gameID]
 	if g == nil {
