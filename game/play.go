@@ -85,6 +85,7 @@ func drill(siteID int) playFn {
 			}
 			log.Printf("player %d drilling site %d with bit %d", playerID, siteID, deed.bit)
 			deed.bit++
+			deed.pnl -= g.f.cost[siteID]
 
 			if deed.bit == oil || deed.bit == 9 {
 				log.Printf("player %d done drilling site %d", playerID, siteID)
