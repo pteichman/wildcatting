@@ -146,16 +146,6 @@ func (g *game) nextWeek() {
 	g.week++
 	g.price = int(100 * math.Abs(1+rand.NormFloat64()))
 
-	// Oil and gas wells usually reach their maximum output shortly after completion.
-	// From that time, other than wells completed in water-drive reservoirs, they decline
-	// in production, the rapidity of decline depending on the output of the wells and on
-	// other factors governing their productivity. The production decline curve shows the
-	// amount of oil and gas produced per unit of time for several consecutive periods;
-	// if the conditions affecting the rate of production are not changed, the curve may
-	// be fairly regular, and, if projected, will furnish useful knowledge as to the future
-	// production of the well. By the aid of this knowledge the value of a property may be
-	// judged, and proper depletion and depreciation charges may be made on the books of
-	// the operating company.(Lewis 1918)
 	for s, d := range g.deeds {
 		if d.bit == 0 || d.bit != g.f.oil[s] || d.stop > 0 {
 			continue
@@ -173,29 +163,12 @@ func (g *game) nextWeek() {
 			if until == 0 {
 				until = g.week
 			}
-
-			// pressure diminishes 33% per pump site week. with a large enough
+			// pressure diminishes 1/3 per pump site week. with a large enough
 			// reservoir this is subtle but for a small reservoir it's devastating
 			tot -= 1.0 - math.Pow(0.666, float64(until-d.week))
 		}
 		pressure := tot / float64(len(res))
-
-		// FIXME aquafiers would need to be rolled into the previous loop,
-		// counteracting the pressure decreases as pumping continue. this should be
-		// tuned so without strong aquifiers, pressure reductions are devastating
-
-		// The aquifer strength also refers to how well the aquifer mitigates the reservoir's
-		// normal pressure decline. A strong aquifer refers to one in which the water-influx
-		// rate approaches the reservoir's fluid withdrawal rate at reservoir conditions.
-
-		// Reservoir engineers have often used pressure contour maps or some approximate
-		// methods to determine field average reservoir pressure for p/z analysis.
-		// Usually, however, individual well pressures are based on extrapolation of
-		// pressure buildup tests or from long shut-in periods. In either case, the
-		// average pressure measured does not represent a point value, but rather is
-		// the average value within the well’s effective drainage volume
-
-		// ramp up: capacity approaches 100 barrels per site @ 1.0 pressure
+		// ramp up: well capacity approaches 100 barrels per site @ 1.0 pressure
 		capacity := 100 * (1 - math.Pow(0.5, float64(g.week-d.week)))
 		output := int(math.Floor(pressure * capacity * float64(len(res))))
 		log.Printf("reservoir %d size %d capacity %f pressure %f output %d", res, len(res), capacity, pressure, output)
