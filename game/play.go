@@ -17,7 +17,6 @@ const (
 // player moves. it returns the playFn for the next state transition.
 type playFn func(*game, int) playFn
 
-// return this player's function for handling survey moves
 func survey(g *game, playerID int) playFn {
 	for {
 		g.view[playerID] <- surveyView(g, playerID)
@@ -47,7 +46,7 @@ func survey(g *game, playerID int) playFn {
 }
 
 func report(siteID int) playFn {
-	// return this player's function for surveyor's report
+	// return this player's function for surveyor's report at specific site
 	return func(g *game, playerID int) playFn {
 		log.Print("report state player", playerID)
 		for {
@@ -96,7 +95,6 @@ func drill(siteID int) playFn {
 	}
 }
 
-// return this player's function for handling well sales
 func wells(g *game, playerID int) playFn {
 	for {
 		g.view[playerID] <- wellsView(g, playerID)
@@ -126,7 +124,6 @@ func wells(g *game, playerID int) playFn {
 	return score
 }
 
-// return this player's function for showing weekly score
 func score(g *game, playerID int) playFn {
 	g.view[playerID] <- scoreView(g, playerID)
 	<-g.move[playerID]
