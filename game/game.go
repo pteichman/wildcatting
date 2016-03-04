@@ -147,24 +147,6 @@ func playWeek(g *game) stateFn {
 	return playWeek
 }
 
-func (g *game) pressure(res []int) float64 {
-	tot := float64(len(res))
-	for _, s := range res {
-		d := g.deeds[s]
-		if d == nil || d.bit == 0 || d.bit != g.f.oil[s] {
-			continue
-		}
-		until := d.stop
-		if until == 0 {
-			until = g.week
-		}
-
-		// production diminishes 33% per pump site week
-		tot -= 1.0 - math.Pow(0.666, float64(until-d.week))
-	}
-	return tot / float64(len(res))
-}
-
 func (g *game) nextWeek() {
 	g.week++
 	g.price = int(100 * math.Abs(1+rand.NormFloat64()))
@@ -221,7 +203,7 @@ func (g *game) nextWeek() {
 		// ramp up: capacity approaches 100 barrels per site @ 1.0 pressure
 		capacity := 100 * (1 - math.Pow(0.5, float64(g.week-d.week)))
 		output := int(math.Floor(pressure * capacity * float64(len(res))))
-		log.Printf("reservoir %d size %d capacity %f pressure %f size %d output %d", res, len(res), capacity, pressure, len(res), output)
+		log.Printf("reservoir %d size %d capacity %f pressure %f output %d", res, len(res), capacity, pressure, output)
 
 		d.output = output
 		d.pnl += int(float64(d.output*g.price)/100) - g.f.tax[s]
