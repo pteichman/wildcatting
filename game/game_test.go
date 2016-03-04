@@ -76,7 +76,7 @@ func TestGame(t *testing.T) {
 	}
 
 	// start the game
-	g.Move(Move{Done: true})
+	g.Move(0, done)
 
 	for i, tw := range tg.weeks {
 		week := i + 1
@@ -89,10 +89,7 @@ func TestGame(t *testing.T) {
 		// surveys
 		for p, s := range tw.surveys {
 			fmt.Printf("move <- Move{PlayerID: %d, SiteID: %d}\n", p, s)
-			update := g.Move(Move{PlayerID: p, SiteID: s})
-
-			// update from a survey move should be the survey report
-
+			g.Move(p, s)
 		}
 
 		for p, s := range tw.surveys {
@@ -108,7 +105,7 @@ func TestGame(t *testing.T) {
 			var oil bool
 			for i := 0; i < n; i++ {
 				fmt.Printf("move <- Move{PlayerID: %d,}\n", p)
-				g.Move(Move{PlayerID: p})
+				g.Move(p, 0)
 
 				if n == g.f.oil[s] {
 					oil = true
@@ -118,7 +115,7 @@ func TestGame(t *testing.T) {
 
 			if !oil && n < maxOil {
 				fmt.Printf("move <- Move{PlayerID: %d, Done: true}\n", p)
-				g.Move(Move{PlayerID: p, Done: true})
+				g.Move(p, done)
 			}
 
 			if g.deeds[s].bit != n {
@@ -134,7 +131,7 @@ func TestGame(t *testing.T) {
 		for p, sells := range tw.sells {
 			for _, s := range sells {
 				fmt.Printf("move <- Move{PlayerID: %d, SiteID: %d}\n", p, s)
-				g.Move(Move{PlayerID: p, SiteID: s})
+				g.Move(p, s)
 
 				if g.deeds[s].stop != g.week {
 					t.Errorf("selling (week %d player %d site %d): expect stop %d; got %d", g.week, p, s, g.week, g.deeds[s].stop)
@@ -142,7 +139,7 @@ func TestGame(t *testing.T) {
 			}
 
 			fmt.Printf("move <- Move{PlayerID: %d, Done: true}\n", p)
-			g.Move(Move{PlayerID: p, Done: true})
+			g.Move(p, done)
 
 		}
 	}
