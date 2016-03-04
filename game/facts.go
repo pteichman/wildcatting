@@ -42,7 +42,7 @@ var facts = []string{
 	`In July 1543, the remnants of Spanish explorer Hernando de Soto's expedition, led by Luis de Moscoso Alvarado, were forced ashore along the Texas coast between Sabine Pass and High Island. Moscoso reported that the group found oil floating on the surface of the water and used it to caulk their boats.`,
 	`While drilling for water in 1886, Bexar County rancher George Dullnig found a small quantity of oil, but he did not attempt commercial production.`,
 	`City crews in Corsicana were drilling for water in 1894, when they made the first economically significant oil discovery in Texas. That well was abandoned because the drillers needed to find water, not oil.`,
-	`The oil discovery that jump-started Texas' transformation into a major petroleum producer and industrial power was Spindletop.`,
+	`Spindletop was the oil discovery that jump-started Texas' transformation into a major petroleum producer and industrial power.`,
 	`Spindletop triggered an influx of hundreds of eager wildcatters – including former Governor James Stephen Hogg – lusting after a piece of the action, as well as thousands of workers looking for jobs.`,
 	`The Texas Oil Boom was California's fabled Gold Rush of 50 years earlier repeated on the Texas Gulf Coast with rotary drill bits and derricks instead of pick axes and gold pans.`,
 	`The Texas Oil Boom turned into a feeding frenzy of human sharks: scores of speculators sniffing out a quick buck; scam artists peddling worthless leases; and prostitutes, gamblers and liquor dealers, all looking for a chunk of the workers' paychecks.`,
