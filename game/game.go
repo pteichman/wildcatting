@@ -1,12 +1,15 @@
 package game
 
 import (
+	"expvar"
 	"log"
 	"math"
 	"math/rand"
 	"sync"
 	"time"
 )
+
+var stats = expvar.NewMap("game")
 
 type Game interface {
 	Join(string) int
@@ -50,6 +53,8 @@ func New() Game {
 	}
 
 	go g.run()
+
+	stats.Add("Created", 1)
 	return g
 }
 
@@ -60,17 +65,20 @@ func (g *game) run() {
 }
 
 func (g *game) Join(name string) int {
+	stats.Add("Joined", 1)
 	g.join <- name
 	return <-g.joinID
 }
 
 func (g *game) Move(playerID, move int) View {
+	stats.Add("Moved", 1)
 	g.move[playerID] <- move
 	return <-g.view[playerID]
 }
 
 // View returns a JSON serializable object representing the player's current game state.
 func (g *game) View(playerID int) View {
+	stats.Add("Viewed", 1)
 	return <-g.view[playerID]
 }
 

@@ -2,13 +2,22 @@ package main
 
 import (
 	"encoding/json"
+	"expvar"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
+	"runtime"
 	"strconv"
+	"time"
 
 	"github.com/9r33n/wildcatting/game"
 	"github.com/gorilla/mux"
+)
+
+var (
+	debug = flag.String("debug", "", "run expvar/pprof server (host:port)")
+	stats = expvar.NewMap("wildcatting")
 )
 
 type handler struct {
@@ -16,6 +25,15 @@ type handler struct {
 }
 
 func main() {
+	flag.Parse()
+	publishRuntime()
+
+	if *debug != "" {
+		go func() {
+			log.Fatal(http.ListenAndServe(*debug, nil))
+		}()
+	}
+
 	h := &handler{}
 
 	host := "0.0.0.0"
@@ -23,7 +41,7 @@ func main() {
 	addr := fmt.Sprintf("%s:%d", host, port)
 	log.Printf("HTTP server listening to %s\n", addr)
 
-	log.Fatal(http.ListenAndServe(addr, h.newRouter()))
+	log.Fatal(http.ListenAndServe(addr, statswrap(h.newRouter())))
 }
 
 func (h *handler) newRouter() *mux.Router {
@@ -169,4 +187,22 @@ func (h *handler) getPlayerID(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(js)
+}
+
+func publishRuntime() {
+	expvar.Publish("NumGoroutine", expvar.Func(
+		func() interface{} { return runtime.NumGoroutine() },
+	))
+
+	start := time.Now().UnixNano()
+	expvar.Publish("Uptime", expvar.Func(
+		func() interface{} { return time.Now().UnixNano() - start },
+	))
+}
+
+func statswrap(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, r)
+		stats.Add("Requested", 1)
+	})
 }
