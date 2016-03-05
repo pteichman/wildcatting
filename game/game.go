@@ -76,9 +76,7 @@ func (g *game) Move(playerID, move int) View {
 // View returns a JSON serializable object representing the player's current game state.
 func (g *game) View(playerID int) View {
 	// noop returns the view without advancing the state
-	go func() {
-		g.move[playerID] <- noop
-	}()
+	g.move[playerID] <- noop
 	return <-g.view[playerID]
 }
 
