@@ -111,12 +111,7 @@ func (h *handler) getGameID(w http.ResponseWriter, r *http.Request) {
 	w.Write(js)
 }
 
-// move making... starting, surveying, drilling, selling
-//
-// start -> week
-// survey -> probability, tax, cost
-// drill -> bit, wet
-// selling -> well revenue
+// move making... starting, surveying, drilling, selling, scoring
 func (h *handler) postPlayerID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	gameID, err := strconv.Atoi(vars["gid"])
