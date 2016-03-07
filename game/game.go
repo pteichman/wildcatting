@@ -10,17 +10,17 @@ import (
 
 type Game interface {
 	Join(string) int
-	State() View
+	Status() View
 	Move(int, int) View
 	View(int) View
 }
 
 type game struct {
 	players    []string
-	start      chan bool
 	join       chan string
 	joinID     chan int
 	move       []chan int
+	status     chan View
 	view       []chan View
 	f          *field
 	week       int
@@ -43,9 +43,9 @@ func New() Game {
 
 	g := &game{
 		f:      newField(),
-		start:  make(chan bool),
 		join:   make(chan string),
 		joinID: make(chan int),
+		status: make(chan View),
 		deeds:  make(map[int]*deed),
 	}
 
@@ -65,24 +65,18 @@ func (g *game) Join(name string) int {
 }
 
 func (g *game) Move(playerID, move int) View {
-	if playerID == 0 && g.week == 0 {
-		g.start <- true
-	} else {
-		g.move[playerID] <- move
-	}
+	g.move[playerID] <- move
 	return <-g.view[playerID]
 }
 
 // View returns a JSON serializable object representing the player's current game state.
 func (g *game) View(playerID int) View {
-	// noop returns the view without advancing the state
-	g.move[playerID] <- noop
 	return <-g.view[playerID]
 }
 
 // State returns the high-level state of the game: who has joined and has it started.
-func (g *game) State() View {
-	return view(g)
+func (g *game) Status() View {
+	return <-g.status
 }
 
 // game state machine func
@@ -90,9 +84,26 @@ type stateFn func(*game) stateFn
 
 // lobby is the game state machine function for handling joins before the start of the game.
 func lobby(g *game) stateFn {
+	var start chan int
+
+	stop := make(chan struct{})
+	go func() {
+	Loop:
+		for {
+			select {
+			case g.status <- lobbyView(g):
+			case <-stop:
+				break Loop
+			}
+		}
+	}()
 
 Loop:
 	for {
+		// player 0 is the owner and her first move is the start signal
+		if len(g.move) > 0 {
+			start = g.move[0]
+		}
 		select {
 		case name := <-g.join:
 			playerID := len(g.players)
@@ -101,24 +112,35 @@ Loop:
 			g.view = append(g.view, make(chan View))
 			g.joinID <- playerID
 			log.Printf("name %s joined as player %d", name, playerID)
-		case <-g.start:
+		case <-start:
 			break Loop
 		}
 	}
-	close(g.join)
+	close(stop)
 
-	log.Printf("starting game with %d players", len(g.players))
+	log.Printf("starting week with %d players", len(g.players))
 	g.nextWeek()
 
-	return playWeek
+	return play
 }
 
 // week is the game state machine function for handling a single week's gameplay.
-func playWeek(g *game) stateFn {
-	var wg sync.WaitGroup
-	wg.Add(len(g.players))
+func play(g *game) stateFn {
+	stop := make(chan struct{})
+	go func() {
+	Loop:
+		for {
+			select {
+			case g.status <- playView(g):
+			case <-stop:
+				break Loop
+			}
+		}
+	}()
 
 	// run a state machine for each player in individual go routines
+	var wg sync.WaitGroup
+	wg.Add(len(g.players))
 	for p := 0; p < len(g.players); p++ {
 		go func(playerID int) {
 			defer wg.Done()
@@ -128,16 +150,11 @@ func playWeek(g *game) stateFn {
 		}(p)
 	}
 	wg.Wait()
+	close(stop)
 
 	log.Printf("all %d players completed week %d", len(g.players), g.week)
-	g.nextWeek()
 
-	if g.week == 13 {
-		log.Println("game over!")
-		return nil
-	}
-
-	return playWeek
+	return lobby
 }
 
 func (g *game) nextWeek() {

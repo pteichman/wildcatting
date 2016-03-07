@@ -5,11 +5,35 @@ import "math/rand"
 // View is a generic type for JSON serializable data representing the client state.
 type View interface{}
 
-func view(g *game) View {
+func lobbyView(g *game) View {
+	type player struct {
+		Name string `json:"name"`
+		PNL  int    `json:"pnl"`
+	}
+
+	players := make([]player, len(g.players))
+	for p := range g.players {
+		pnl := 0
+		for _, deed := range g.deeds {
+			if deed.player != p {
+				continue
+			}
+			pnl += deed.pnl
+		}
+		players[p] = player{g.players[p], pnl}
+	}
+
 	return struct {
-		Players []string `json:"players"`
-		Started bool     `json:"started"`
-	}{g.players, g.week > 0}
+		Name    string   `json:"name"`
+		Week    int      `json:"week"`
+		Players []player `json:"players"`
+	}{"lobby", g.week, players}
+}
+
+func playView(g *game) View {
+	return struct {
+		Name string `json:"name"`
+	}{"play"}
 }
 
 type playerViewFn func(*game, int) View

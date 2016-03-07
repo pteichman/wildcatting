@@ -21,20 +21,37 @@ body {
     position: relative;
 }
 
-#lobby-title {
-    top: 20px;
-    left: 400px;
+#lobby-inner {
+    width: 100%;
+    margin: 0 auto;
+    top: 10px;
+    text-align: center;
     position: relative;
 }
 
+#lobby-title-span {
+    float: center;
+}
+
+#lobby-game-span {
+    padding-left: 10px;
+    float: left;
+}
+
+#lobby-week-span {
+    padding-right: 10px;
+    float: right;
+}
+
 #lobby-players {
-    top:60px;
-    left: 18px;
+    top: 100px;
+    width: 50%;
+    margin: 0 auto;
     position: relative;
 }
 
 #lobby-prompt {
-    top: 218px;
+    top: 418px;
     left: 400px;
     position: relative;
 }
@@ -188,7 +205,7 @@ body {
     text-align: right;
 }
 
-#score {
+#summary {
     color: black;
     background-color: #00c120;
     position: relative;

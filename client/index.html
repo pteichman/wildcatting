@@ -7,9 +7,15 @@
 </head>
 <body>
     <div id="lobby" class="screen">
-        <div id="lobby-title">PLAYERS: GAME 0</div>
-        <div id="lobby-players"></div>
-        <div id="lobby-prompt"><p>ANY KEY TO START</p></div>
+        <div id="lobby-inner">
+            <span id="lobby-game-span">GAME <span id="lobby-game"></span></span>
+            <span id="lobby-title-span">... WILDCATTING ...</span>
+            <span id="lobby-week-span">WEEK <span id="lobby-week"></span></span>
+
+            <table id="lobby-players">
+            </table>
+            <div id="lobby-prompt"><p>ANY KEY TO START</p></div>
+        </div>
     </div>
     <div id="survey" class="screen" style="display:none">
         <div id="survey-header">
@@ -59,7 +65,7 @@
             <tbody></tbody>
         </table>
     </div>
-    <div id="score" class="screen" style="display:none">WEEKLY SUMMARY</div>
+    <div id="summary" class="screen" style="display:none">WEEKLY SUMMARY</div>
 
     <script src="client.js"></script>
 </body>

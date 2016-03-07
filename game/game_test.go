@@ -1,9 +1,6 @@
 package game
 
-import (
-	"fmt"
-	"testing"
-)
+import "testing"
 
 type testGame struct {
 	f     *field
@@ -48,17 +45,19 @@ var tg = testGame{
 		testWeek{
 			surveys: []int{21, 40, 45, 400},
 			reports: []int{yes, yes, yes, yes},
-			drills:  []int{9, 9, 9, 9},
+			drills:  []int{8, 8, 8, 8},
 			sells:   [][]int{{}, {}, {}, {}},
 		},
 		testWeek{
 			surveys: []int{31, 50, 55, 500},
-			drills:  []int{9, 9, 9, 9},
+			reports: []int{yes, yes, yes, yes},
+			drills:  []int{8, 8, 8, 8},
 			sells:   [][]int{{}, {}, {}, {}},
 		},
 		testWeek{
 			surveys: []int{41, 60, 65, 600},
-			drills:  []int{9, 9, 9, 9},
+			reports: []int{yes, yes, yes, yes},
+			drills:  []int{8, 8, 8, 8},
 			sells:   [][]int{{}, {}, {}, {}},
 		},
 	},
@@ -93,10 +92,6 @@ func TestGame(t *testing.T) {
 
 		// surveys
 		for p, s := range tw.surveys {
-			if p > 0 {
-				<-g.view[p]
-			}
-
 			g.Move(p, s)
 			deed := g.deeds[s]
 			if deed.player != p {
@@ -112,7 +107,7 @@ func TestGame(t *testing.T) {
 		// drilling
 		for p, n := range tw.drills {
 			for i := 0; i < n; i++ {
-				g.Move(p, 1)
+				g.Move(p, 0)
 			}
 			s := tw.surveys[p]
 			if g.deeds[s].bit != n {
@@ -120,6 +115,13 @@ func TestGame(t *testing.T) {
 			}
 			if tw.drills[p] > 0 && g.deeds[s].week != g.week {
 				t.Errorf("drilling (week %d player %d site %d): expect start %d; got %d", g.week, p, s, g.week, g.deeds[s].week)
+			}
+		}
+
+		// stop drilling where we were
+		for p, yesNo := range tw.reports {
+			if yesNo == yes {
+				g.Move(p, done)
 			}
 		}
 
@@ -132,14 +134,10 @@ func TestGame(t *testing.T) {
 					t.Errorf("selling (week %d player %d site %d): expect stop %d; got %d", g.week, p, s, g.week, g.deeds[s].stop)
 				}
 			}
-			fmt.Printf("sending sell done to %d\n", p)
 			g.Move(p, done)
-			fmt.Printf("SENT sell done to %d\n", p)
 		}
 
-		// finish week
-		for p := range tg.joins {
-			g.Move(p, done)
-		}
+		// begin next week
+		g.Move(0, 0)
 	}
 }

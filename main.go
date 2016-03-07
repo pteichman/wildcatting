@@ -101,7 +101,7 @@ func (h *handler) getGameID(w http.ResponseWriter, r *http.Request) {
 		// mux should guarantee a parsable int
 		panic(err)
 	}
-	update := h.games[gameID].State()
+	update := h.games[gameID].Status()
 	js, err := json.Marshal(update)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

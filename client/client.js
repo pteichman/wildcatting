@@ -18,13 +18,11 @@ var fsm = StateMachine.create({
         { name: 'yes', from: 'report', to: 'drill' },
         { name: 'done', from: 'report', to: 'wells' },
         { name: 'done', from: 'drill', to: 'wells' },
-        { name: 'done', from: 'wells', to: 'score' },
-        { name: 'done', from: 'score', to: 'survey' },
+        { name: 'done', from: 'wells', to: 'lobby' },
         { name: 'survey', from: 'lobby', to: 'survey' },
         { name: 'report', from: 'lobby', to: 'report' },
         { name: 'drill', from: 'lobby', to: 'drill' },
         { name: 'wells', from: 'lobby', to: 'wells' },
-        { name: 'score', from: 'lobby', to: 'score' },
     ],
 
     callbacks: {
@@ -34,7 +32,6 @@ var fsm = StateMachine.create({
         onenterreport: report,
         onenterdrill: drill,
         onenterwells: wells,
-        onenterscore: score,
 
         onleavelobby: function() {
             d3.select("#lobby").style("display", "none");
@@ -58,10 +55,6 @@ var fsm = StateMachine.create({
             d3.select("#wells-table tbody").html("");
             Mousetrap.reset();
         },
-        onleavescore: function() {
-            d3.select("#score").style("display", "none");
-            Mousetrap.reset();
-        },
     }
 });
 
@@ -70,28 +63,17 @@ function moveURL() {
 }
 
 function lobby() {
+    d3.select("#lobby").style("display", "block");
+
     updateState();
 
     function updateState() {
         var poll;
         d3.json("/game/" + game + "/")
-            .on("load", function(update) {
-                if (!update.started) {
-                    d3.select("#lobby").style("display", "block");
-                }
+            .on("load", function(data) {
+                state = data;
 
-                d3.select("#lobby-players")
-                    .selectAll("tr")
-                    .data(update.players)
-                    .enter()
-                    .append("tr")
-                    .selectAll("td")
-                    .data(function(d) { return d; })
-                    .enter()
-                    .append("td")
-                    .text(function(d) { return d; });
-
-                if (update.started) {
+                if (state.name == "play") {
                     clearTimeout(poll);
 
                     d3.json(moveURL())
@@ -99,15 +81,27 @@ function lobby() {
                             state = data;
                             fsm[state.name]()
                         })
-                        .on("error", function(error) {
-                            console.log(error);
-                        })
+                        .on("error", console.log)
                         .get();
+                    return
                 }
+
+                d3.select("#lobby-game").text("0");
+                d3.select("#lobby-week").text(state.week);
+
+                d3.select("#lobby-players").html("");
+                d3.select("#lobby-players")
+                    .selectAll("tr")
+                    .data(state.players)
+                    .enter()
+                    .append("tr")
+                    .selectAll("td")
+                    .data(function(d) { return [d.name, "$", d.pnl]; })
+                    .enter()
+                    .append("td")
+                    .text(function(d) { return d; });
             })
-            .on("error", function(error) {
-                console.log(error);
-            })
+            .on("error", console.log)
             .get();
         poll = setTimeout(updateState, 1000);
     }
@@ -116,9 +110,7 @@ function lobby() {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
         d3.json(moveURL())
             .on("load", function(data) {} )
-            .on("error", function(error) {
-                console.log(error);
-            })
+            .on("error", console.log)
             .post(JSON.stringify(-1));
     });
 }
@@ -208,9 +200,7 @@ function survey() {
                     fsm.done();
                 }
             })
-            .on("error", function(error) {
-                console.log(error);
-             })
+            .on("error", console.log)
             .post(JSON.stringify(site));
     });
 
@@ -270,7 +260,7 @@ function report() {
                 state = data;
                 fsm.yes();
             })
-            .on("error", function(error) { console.log(error); })
+            .on("error", console.log)
             .post(JSON.stringify(1));
     });
     Mousetrap.bind('n', function(e) {
@@ -280,7 +270,7 @@ function report() {
                 state = data;
                 fsm.done();
             })
-            .on("error", function(error) { console.log(error); })
+            .on("error", console.log)
             .post(JSON.stringify(0));
     });
 }
@@ -304,9 +294,7 @@ function drill() {
                 d3.select("#drill-depth").text(state.depth);
                 d3.select("#drill-cost").text(state.cost);
             })
-            .on("error", function(error) {
-                console.log(error);
-             })
+            .on("error", console.log)
             .post(JSON.stringify(1));
     }
 
@@ -322,7 +310,7 @@ function drill() {
                 state = data;
                 fsm.done();
             })
-            .on("error", function(error) { console.log(error); })
+            .on("error", console.log)
             .post(JSON.stringify(-1));
     });
 }
@@ -354,34 +342,16 @@ function wells() {
 
     Mousetrap.bind('q', function(e) {
         e.preventDefault ? e.preventDefault() : (e.returnValue = false);
+
         d3.json(moveURL())
             .on("load", function(data) {
                 state = data;
-                if (state.name != 'wells') {
-                    fsm.done();
-                }
+                fsm.done();
             })
-            .on("error", function(error) { alert(error); })
+            .on("error", console.log)
             .post(JSON.stringify(-1));
     });
 }
-
-function score() {
-    d3.select("#score").style("display", "block");
-    Mousetrap.bind('space', function(e) {
-        e.preventDefault ? e.preventDefault() : (e.returnValue = false);
-        d3.json(moveURL())
-            .on("load", function(data) {
-                state = data;
-                if (state.name != 'score') {
-                    fsm.done();
-                }
-            })
-            .on("error", function(error) { alert(error); })
-            .post(JSON.stringify(-1));
-    });
-}
-
 // % operator in javascript is remainder and isn't helpful for wrapping negatives
 function mod(a, n) {
     return a - (n * Math.floor(a/n));
