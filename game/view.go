@@ -33,7 +33,8 @@ func lobbyView(g *game) View {
 func playView(g *game) View {
 	return struct {
 		Name string `json:"name"`
-	}{"play"}
+		Week int    `json:"week"`
+	}{"play", g.week}
 }
 
 type playerViewFn func(*game, int) View
