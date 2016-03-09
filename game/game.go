@@ -45,7 +45,7 @@ func New() Game {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	g := &game{
-		f:      newField(),
+		f:      newField(24, 80),
 		join:   make(chan string),
 		joinID: make(chan int),
 		status: make(chan View),

@@ -16,17 +16,22 @@ const (
 	maxTax  = 550
 )
 
-type field struct{ prob, cost, oil, tax []int }
+type field struct {
+	height, width        int
+	prob, cost, oil, tax []int
+}
 
-func newField() *field {
-	prob := fill(1+rand.Intn(4), minProb, maxProb, 0.05, 0.25, false) // a few well formed peaks
-	oil := probFilter(fill(1, minOil, maxOil, 0.1, 0.5, true), prob)  // hardship
+func newField(height, width int) *field {
+	prob := fill(height, width, 1+rand.Intn(4), minProb, maxProb, 0.05, 0.25, false) // a few well formed peaks
+	oil := probFilter(fill(height, width, 1, minOil, maxOil, 0.1, 0.5, true), prob)  // hardship
 
 	return &field{
-		prob: prob,
-		cost: fill(5+rand.Intn(5), minCost, maxCost, 0.1, 0.25, true), // many chaotic peaks
-		oil:  oil,
-		tax:  fill(10+rand.Intn(10), minTax, maxTax, 0.1, 0.5, false), // local politics
+		height: height,
+		width:  width,
+		prob:   prob,
+		cost:   fill(height, width, 5+rand.Intn(5), minCost, maxCost, 0.1, 0.25, true), // many chaotic peaks
+		oil:    oil,
+		tax:    fill(height, width, 10+rand.Intn(10), minTax, maxTax, 0.1, 0.5, false), // local politics
 	}
 }
 
@@ -37,11 +42,11 @@ func abs(x int) int {
 	return x
 }
 
-func closest(p int, peaks []int) (int, int) {
+func closest(height, width, p int, peaks []int) (int, int) {
 	var minIdx int
-	minDist := 24 + 80
+	minDist := height + width
 	for i, q := range peaks {
-		d := abs(p/80-q/80) + abs(p%80-q%80)
+		d := abs(p/width-q/width) + abs(p%width-q%width)
 		if d < minDist {
 			minDist = d
 			minIdx = i
@@ -50,17 +55,17 @@ func closest(p int, peaks []int) (int, int) {
 	return minIdx, minDist
 }
 
-func fill(n, min, max int, decay, fuzz float64, inverse bool) []int {
+func fill(height, width, n, min, max int, decay, fuzz float64, inverse bool) []int {
 	var peaks []int
 	for i := 0; i < n; i++ {
-		peaks = append(peaks, rand.Intn(24*80))
+		peaks = append(peaks, rand.Intn(height*width))
 	}
-	values := make([]int, 24*80, 24*80)
-	for i := 0; i < 24*80; i++ {
-		minIdx, minDist := closest(i, peaks)
+	values := make([]int, height*width, height*width)
+	for i := 0; i < height*width; i++ {
+		minIdx, minDist := closest(height, width, i, peaks)
 
 		// ratio of the longest possible distance
-		v := float64(minDist) / (24 + 80)
+		v := float64(minDist) / float64(height+width)
 
 		// Double the value for a better input into log :/
 		// This should be distilled to some sane 0.0 to 1.0 param
@@ -101,21 +106,21 @@ func probFilter(vals, p []int) []int {
 	return filtered
 }
 
-func neighbors(s int) <-chan int {
+func (f *field) neighbors(s int) <-chan int {
 	out := make(chan int)
-	y, x := s/80, s%80
+	y, x := s/f.width, s%f.width
 	go func() {
-		if x-1 >= 0 {
-			out <- 80*y + x - 1
-		}
 		if y-1 >= 0 {
-			out <- 80*(y-1) + x
+			out <- f.width*(y-1) + x
 		}
-		if x+1 < 80 {
-			out <- 80*y + x + 1
+		if x-1 >= 0 {
+			out <- f.width*y + x - 1
 		}
-		if y+1 < 24 {
-			out <- 80*(y+1) + x
+		if x+1 < f.width {
+			out <- f.width*y + x + 1
+		}
+		if y+1 < f.height {
+			out <- f.width*(y+1) + x
 		}
 		close(out)
 	}()
@@ -131,11 +136,11 @@ func (f *field) reservoir(s int) []int {
 		frontier = frontier[:len(frontier)-1]
 		visited[cur] = true
 
-		if f.oil[cur] != f.oil[s] {
+		if f.oil[s] == 0 || f.oil[cur] != f.oil[s] {
 			continue
 		}
 
-		for nbr := range neighbors(cur) {
+		for nbr := range f.neighbors(cur) {
 			if _, ok := visited[nbr]; ok {
 				continue
 			}

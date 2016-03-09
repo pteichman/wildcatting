@@ -1,58 +1,103 @@
 package game
 
-import "testing"
+import (
+	"fmt"
+	"sort"
+	"testing"
+)
 
 type pt struct{ y, x int }
 
 func TestNeighbors(t *testing.T) {
-	expect := map[int]bool{
-		40:  true,
-		119: true,
-		121: true,
-		200: true,
+
+	f := newField(3, 3)
+
+	// 0 1 2
+	// 3 4 5
+	// 6 7 8
+	expect := [][]int{
+		{1, 3},
+		{0, 2, 4},
+		{1, 5},
+		{0, 4, 6},
+		{1, 3, 5, 7},
+		{2, 4, 8},
+		{3, 7},
+		{4, 6, 8},
+		{5, 7},
 	}
-	ct := 0
-	for nbr := range neighbors(120) {
-		if _, ok := expect[nbr]; !ok {
-			t.Errorf("unexpected neighbor %d", nbr)
+
+	for i, expect := range expect {
+		j := 0
+		for nbr := range f.neighbors(i) {
+			if nbr != expect[j] {
+				t.Errorf("neigbors(%d) -> element at index %d is %d; expect %d", i, j, nbr, expect[j])
+			}
+			j++
 		}
-		ct++
-	}
-	if ct != 4 {
-		t.Errorf("expected 4 neighbors; got %d", ct)
 	}
 }
 
 var reservoirTests = []struct {
-	depth int
-	oil   []int
-	site  int
+	oil    []int
+	expect [][]int
 }{
-	{9, []int{117}, 117},
-	{3, []int{1, 2, 3, 4, 5, 6, 7, 8, 9}, 1},
-	{4, []int{0, 80, 160, 240, 320}, 320},
-	{6, []int{118, 119, 120, 121, 122, 40, 200}, 120},
+	{
+		oil: []int{
+			0, 0, 0,
+			0, 0, 0,
+			0, 0, 0},
+		expect: [][]int{{}, {}, {}, {}, {}, {}, {}, {}, {}}},
+	{
+		oil: []int{
+			0, 1, 0,
+			1, 1, 1,
+			0, 1, 0},
+		expect: [][]int{
+			{},
+			{1, 3, 4, 5, 7},
+			{},
+			{1, 3, 4, 5, 7},
+			{1, 3, 4, 5, 7},
+			{1, 3, 4, 5, 7},
+			{},
+			{1, 3, 4, 5, 7},
+			{},
+		}},
+	{
+		oil: []int{
+			1, 1, 1,
+			2, 1, 2,
+			3, 3, 3},
+		expect: [][]int{
+			{0, 1, 2, 4},
+			{0, 1, 2, 4},
+			{0, 1, 2, 4},
+			{3},
+			{0, 1, 2, 4},
+			{5},
+			{6, 7, 8},
+			{6, 7, 8},
+			{6, 7, 8},
+		}},
 }
 
 func TestReservoir(t *testing.T) {
-
-	for _, test := range reservoirTests {
-		f := &field{
-			oil: make([]int, 80*24),
-		}
-		expect := make(map[int]bool)
-		for _, s := range test.oil {
-			f.oil[s] = test.depth
-			expect[s] = true
-		}
-
-		res := f.reservoir(test.site)
-		if len(res) != len(expect) {
-			t.Errorf("expected %d neighbors; got %d", len(expect), len(res))
-		}
-		for _, nbr := range res {
-			if _, ok := expect[nbr]; !ok {
-				t.Errorf("unexpected neighbor %d", nbr)
+	for i, test := range reservoirTests {
+		f := newField(3, 3)
+		f.oil = test.oil
+		for s := 0; s < 9; s++ {
+			res := f.reservoir(s)
+			sort.Sort(sort.IntSlice(res))
+			if len(res) != len(test.expect[s]) {
+				t.Errorf("reservoir test %d len(reservoir(%d)) -> %d; expect %d", i, s, len(res), len(test.expect[s]))
+				continue
+			}
+			fmt.Println("reservoir: ", res)
+			for r := 0; r < len(res); r++ {
+				if res[r] != test.expect[s][r] {
+					t.Errorf("reservoir test %d reservoir(%d)[%d] == %d; expect %d", i, s, r, res[r], test.expect[s][r])
+				}
 			}
 		}
 	}
