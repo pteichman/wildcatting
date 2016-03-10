@@ -17,48 +17,44 @@ type testWeek struct {
 
 var tg = testGame{
 	f: &field{
-		prob: make([]int, 24*80),
-		cost: make([]int, 24*80),
-		oil:  make([]int, 24*80),
-		tax:  make([]int, 24*80),
+		height: 3,
+		width:  3,
+		prob: []int{
+			50, 50, 50,
+			50, 50, 50,
+			50, 50, 50},
+		cost: []int{
+			10, 10, 10,
+			10, 10, 10,
+			10, 10, 10},
+		oil: []int{
+			0, 0, 0,
+			0, 0, 0,
+			0, 0, 0},
+		tax: []int{
+			100, 100, 100,
+			100, 100, 100,
+			100, 100, 100},
 	},
-	joins: []string{"bob", "peter", "joe", "jbz"},
+	joins: []string{"bob", "peter", "joe"},
 	weeks: []testWeek{
 		testWeek{
-			surveys: []int{13, 42, 37, 1914},
-			reports: []int{yes, yes, no, no},
-			drills:  []int{3, 5, 0, 0},
-			sells:   [][]int{{}, {}, {}, {}},
+			surveys: []int{0, 1, 2},
+			reports: []int{yes, yes, yes},
+			drills:  []int{1, 2, 3},
+			sells:   [][]int{{}, {}, {}},
 		},
 		testWeek{
-			surveys: []int{12, 33, 36, 1913},
-			reports: []int{yes, yes, no, no},
-			drills:  []int{3, 5, 0, 0},
-			sells:   [][]int{{}, {}, {}, {}},
+			surveys: []int{3, 4, 5},
+			reports: []int{no, no, no},
+			drills:  []int{0, 0, 0},
+			sells:   [][]int{{}, {}, {}},
 		},
 		testWeek{
-			surveys: []int{11, 30, 35, 300},
-			reports: []int{no, no, yes, yes},
-			drills:  []int{0, 0, 5, 5},
-			sells:   [][]int{{}, {}, {}, {}},
-		},
-		testWeek{
-			surveys: []int{21, 40, 45, 400},
-			reports: []int{yes, yes, yes, yes},
-			drills:  []int{8, 8, 8, 8},
-			sells:   [][]int{{}, {}, {}, {}},
-		},
-		testWeek{
-			surveys: []int{31, 50, 55, 500},
-			reports: []int{yes, yes, yes, yes},
-			drills:  []int{8, 8, 8, 8},
-			sells:   [][]int{{}, {}, {}, {}},
-		},
-		testWeek{
-			surveys: []int{41, 60, 65, 600},
-			reports: []int{yes, yes, yes, yes},
-			drills:  []int{8, 8, 8, 8},
-			sells:   [][]int{{}, {}, {}, {}},
+			surveys: []int{6, 7, 8},
+			reports: []int{yes, yes, yes},
+			drills:  []int{0, 0, 0},
+			sells:   [][]int{{}, {}, {}},
 		},
 	},
 }
