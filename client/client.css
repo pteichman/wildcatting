@@ -91,15 +91,16 @@ body {
 #field svg rect {
     height: 18px;
     width: 12px;
-    opacity: 0.75;
 }
 
 .cursor {
-  animation: blinker 1.5s linear infinite;
+  animation: blinker 1.25s linear infinite;
 }
 
 @keyframes blinker {
-  50% { opacity: 1; }
+    50% {
+        fill: #00c120;
+    }
 }
 
 #fact {
