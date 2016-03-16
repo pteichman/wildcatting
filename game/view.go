@@ -11,8 +11,8 @@ func lobbyView(g *game) View {
 		PNL  int    `json:"pnl"`
 	}
 
-	players := make([]player, len(g.players))
-	for p := range g.players {
+	players := make([]player, 0)
+	for _, p := range g.world.Players() {
 		pnl := 0
 		for _, deed := range g.deeds {
 			if deed.player != entity(p) {
@@ -20,7 +20,7 @@ func lobbyView(g *game) View {
 			}
 			pnl += deed.pnl
 		}
-		players[p] = player{g.players[p], pnl}
+		players = append(players, player{g.world.Name(p), pnl})
 	}
 
 	return struct {
@@ -119,7 +119,7 @@ func wellsView(g *game, playerID entity) View {
 		Week   int    `json:"week"`
 		Price  int    `json:"price"`
 		Wells  []well `json:"wells"`
-	}{"wells", g.players[playerID], g.week, g.price, wells}
+	}{"wells", g.world.Name(playerID), g.week, g.price, wells}
 	return state
 }
 

@@ -37,9 +37,18 @@ Loop:
 
 	log.Printf("player %d surveying site %d", playerID, move)
 	g.deeds[move] = &deed{player: playerID, week: g.week}
-	g.surveyTurn = entity((int(g.surveyTurn) + 1) % len(g.players))
+	g.surveyTurn = next(g.world.Players(), g.surveyTurn)
+	log.Printf("next player: %v", g.surveyTurn)
 
 	return report(move)
+}
+
+func next(index []entity, e entity) entity {
+	i, _ := linfind(index, e)
+	if i == len(index)-1 {
+		return index[0]
+	}
+	return index[i+1]
 }
 
 func report(siteID site) playFn {

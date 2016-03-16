@@ -21,9 +21,9 @@ type Game interface {
 type site int
 
 type game struct {
-	players    []string
+	world      world
 	join       chan string
-	joinID     chan int
+	joinID     chan entity
 	move       map[entity]chan site
 	status     chan View
 	view       map[entity]chan View
@@ -49,7 +49,7 @@ func New() Game {
 	g := &game{
 		f:      newField(24, 80),
 		join:   make(chan string),
-		joinID: make(chan int),
+		joinID: make(chan entity),
 		move:   make(map[entity]chan site),
 		view:   make(map[entity]chan View),
 		status: make(chan View),
@@ -71,7 +71,7 @@ func (g *game) run() {
 func (g *game) Join(name string) int {
 	stats.Add("Joined", 1)
 	g.join <- name
-	return <-g.joinID
+	return int(<-g.joinID)
 }
 
 func (g *game) Move(playerID, move int) View {
@@ -113,15 +113,19 @@ func lobby(g *game) stateFn {
 Loop:
 	for {
 		// player 0 is the owner and her first move is the start signal
-		if len(g.move) > 0 {
-			start = g.move[0]
+		playerOne := g.world.PlayerOne()
+		if playerOne != None {
+			start = g.move[playerOne]
+			g.surveyTurn = playerOne
 		}
+
 		select {
 		case name := <-g.join:
-			playerID := len(g.players)
-			g.players = append(g.players, name)
-			g.move[entity(playerID)] = make(chan site)
-			g.view[entity(playerID)] = make(chan View)
+			playerID := g.world.NewEntity()
+			g.world.AddPlayer(playerID)
+			g.world.SetName(playerID, name)
+			g.move[playerID] = make(chan site)
+			g.view[playerID] = make(chan View)
 			g.joinID <- playerID
 			log.Printf("name %s joined as player %d", name, playerID)
 		case <-start:
@@ -130,7 +134,7 @@ Loop:
 	}
 	close(stop)
 
-	log.Printf("starting week with %d players", len(g.players))
+	log.Printf("starting week with %d players", len(g.world.Players()))
 	g.nextWeek()
 
 	return play
@@ -152,19 +156,19 @@ func play(g *game) stateFn {
 
 	// run a state machine for each player in individual go routines
 	var wg sync.WaitGroup
-	wg.Add(len(g.players))
-	for p := 0; p < len(g.players); p++ {
+	wg.Add(len(g.world.Players()))
+	for _, playerID := range g.world.Players() {
 		go func(playerID entity) {
 			defer wg.Done()
 			for state := survey; state != nil; {
 				state = state(g, playerID)
 			}
-		}(entity(p))
+		}(playerID)
 	}
 	wg.Wait()
 	close(stop)
 
-	log.Printf("all %d players completed week %d", len(g.players), g.week)
+	log.Printf("all %d players completed week %d", len(g.world.Players()), g.week)
 
 	return lobby
 }
