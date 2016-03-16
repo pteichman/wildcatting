@@ -52,17 +52,17 @@ func surveyView(g *game, playerID entity) View {
 	}{"survey", g.week, g.price, g.f.prob, g.f.cost, g.f.tax, g.f.oil, facts[rand.Intn(len(facts))]}
 }
 
-func reportView(g *game, playerID entity, siteID int) View {
+func reportView(g *game, playerID entity, siteID site) View {
 	return struct {
 		Name string `json:"name"`
-		Site int    `json:"site"`
+		Site site   `json:"site"`
 		Prob int    `json:"prob"`
 		Cost int    `json:"cost"`
 		Tax  int    `json:"tax"`
 	}{"report", siteID, g.f.prob[siteID], g.f.cost[siteID], g.f.tax[siteID]}
 }
 
-func drillView(siteID int) playerViewFn {
+func drillView(siteID site) playerViewFn {
 	return func(g *game, playerID entity) View {
 		depth := g.deeds[siteID].bit * 100
 		cost := g.deeds[siteID].bit * g.f.cost[siteID]
@@ -76,7 +76,7 @@ func drillView(siteID int) playerViewFn {
 
 type well struct {
 	Week   int  `json:"week"`
-	SiteID int  `json:"site"`
+	SiteID site `json:"site"`
 	Sold   bool `json:"sold"`
 	Depth  int  `json:"depth"`
 	Cost   int  `json:"cost"`

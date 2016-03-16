@@ -18,16 +18,18 @@ type Game interface {
 	View(int) View
 }
 
+type site int
+
 type game struct {
 	players    []string
 	join       chan string
 	joinID     chan int
-	move       map[entity]chan int
+	move       map[entity]chan site
 	status     chan View
 	view       map[entity]chan View
 	f          *field
 	week       int
-	deeds      map[int]*deed
+	deeds      map[site]*deed
 	price      int
 	surveyTurn entity
 }
@@ -48,10 +50,10 @@ func New() Game {
 		f:      newField(24, 80),
 		join:   make(chan string),
 		joinID: make(chan int),
-		move:   make(map[entity]chan int),
+		move:   make(map[entity]chan site),
 		view:   make(map[entity]chan View),
 		status: make(chan View),
-		deeds:  make(map[int]*deed),
+		deeds:  make(map[site]*deed),
 	}
 
 	go g.run()
@@ -74,7 +76,7 @@ func (g *game) Join(name string) int {
 
 func (g *game) Move(playerID, move int) View {
 	stats.Add("Moved", 1)
-	g.move[entity(playerID)] <- move
+	g.move[entity(playerID)] <- site(move)
 	return <-g.view[entity(playerID)]
 }
 
@@ -94,7 +96,7 @@ type stateFn func(*game) stateFn
 
 // lobby is the game state machine function for handling joins before the start of the game.
 func lobby(g *game) stateFn {
-	var start chan int
+	var start chan site
 
 	stop := make(chan struct{})
 	go func() {
@@ -118,7 +120,7 @@ Loop:
 		case name := <-g.join:
 			playerID := len(g.players)
 			g.players = append(g.players, name)
-			g.move[entity(playerID)] = make(chan int)
+			g.move[entity(playerID)] = make(chan site)
 			g.view[entity(playerID)] = make(chan View)
 			g.joinID <- playerID
 			log.Printf("name %s joined as player %d", name, playerID)

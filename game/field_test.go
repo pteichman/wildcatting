@@ -15,7 +15,7 @@ func TestNeighbors(t *testing.T) {
 	// 0 1 2
 	// 3 4 5
 	// 6 7 8
-	expect := [][]int{
+	expect := [][]site{
 		{1, 3},
 		{0, 2, 4},
 		{1, 5},
@@ -29,7 +29,7 @@ func TestNeighbors(t *testing.T) {
 
 	for i, expect := range expect {
 		j := 0
-		for nbr := range f.neighbors(i) {
+		for nbr := range f.neighbors(site(i)) {
 			if nbr != expect[j] {
 				t.Errorf("neigbors(%d) -> element at index %d is %d; expect %d", i, j, nbr, expect[j])
 			}
@@ -87,7 +87,10 @@ func TestReservoir(t *testing.T) {
 		f := newField(3, 3)
 		f.oil = test.oil
 		for s := 0; s < 9; s++ {
-			res := f.reservoir(s)
+			var res []int
+			for _, s := range f.reservoir(site(s)) {
+				res = append(res, int(s))
+			}
 			sort.Sort(sort.IntSlice(res))
 			if len(res) != len(test.expect[s]) {
 				t.Errorf("reservoir test %d len(reservoir(%d)) -> %d; expect %d", i, s, len(res), len(test.expect[s]))

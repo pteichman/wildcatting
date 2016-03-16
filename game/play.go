@@ -15,7 +15,7 @@ type playFn func(*game, entity) playFn
 
 func survey(g *game, playerID entity) playFn {
 	log.Printf("player %d survey state", playerID)
-	var move int
+	var move site
 
 Loop:
 	for {
@@ -42,11 +42,11 @@ Loop:
 	return report(move)
 }
 
-func report(siteID int) playFn {
+func report(siteID site) playFn {
 	// return this player's function for surveyor's report at specific site
 	return func(g *game, playerID entity) playFn {
 		log.Printf("player %d report state @ site %d", playerID, siteID)
-		var move int
+		var move site
 		for {
 			select {
 			case g.view[playerID] <- reportView(g, playerID, siteID):
@@ -63,7 +63,7 @@ func report(siteID int) playFn {
 	}
 }
 
-func drill(siteID int) playFn {
+func drill(siteID site) playFn {
 	view := drillView(siteID)
 
 	// return this player's function for drilling a specific site

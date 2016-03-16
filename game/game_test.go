@@ -9,10 +9,10 @@ type testGame struct {
 }
 
 type testWeek struct {
-	surveys []int
+	surveys []site
 	reports []int
 	drills  []int
-	sells   [][]int
+	sells   [][]site
 }
 
 var tg = testGame{
@@ -39,22 +39,22 @@ var tg = testGame{
 	joins: []string{"bob", "peter", "joe"},
 	weeks: []testWeek{
 		testWeek{
-			surveys: []int{0, 1, 2},
+			surveys: []site{0, 1, 2},
 			reports: []int{yes, yes, yes},
 			drills:  []int{1, 2, 3},
-			sells:   [][]int{{}, {}, {}},
+			sells:   [][]site{{}, {}, {}},
 		},
 		testWeek{
-			surveys: []int{3, 4, 5},
+			surveys: []site{3, 4, 5},
 			reports: []int{no, no, no},
 			drills:  []int{0, 0, 0},
-			sells:   [][]int{{}, {}, {}},
+			sells:   [][]site{{}, {}, {}},
 		},
 		testWeek{
-			surveys: []int{6, 7, 8},
+			surveys: []site{6, 7, 8},
 			reports: []int{yes, yes, yes},
 			drills:  []int{0, 0, 0},
-			sells:   [][]int{{}, {}, {}},
+			sells:   [][]site{{}, {}, {}},
 		},
 	},
 }
@@ -88,7 +88,7 @@ func TestGame(t *testing.T) {
 
 		// surveys
 		for p, s := range tw.surveys {
-			g.Move(p, s)
+			g.Move(p, int(s))
 			deed := g.deeds[s]
 			if deed.player != entity(p) {
 				t.Errorf("surveying (week %d player %d site %d): expect owner %d; got %d", g.week, p, s, p, deed.player)
@@ -124,7 +124,7 @@ func TestGame(t *testing.T) {
 		// selling
 		for p, sells := range tw.sells {
 			for _, s := range sells {
-				g.Move(p, s)
+				g.Move(p, int(s))
 
 				if g.deeds[s].stop != g.week {
 					t.Errorf("selling (week %d player %d site %d): expect stop %d; got %d", g.week, p, s, g.week, g.deeds[s].stop)

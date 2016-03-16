@@ -106,31 +106,31 @@ func probFilter(vals, p []int) []int {
 	return filtered
 }
 
-func (f *field) neighbors(s int) <-chan int {
-	out := make(chan int)
-	y, x := s/f.width, s%f.width
+func (f *field) neighbors(s site) <-chan site {
+	out := make(chan site)
+	y, x := s/site(f.width), s%site(f.width)
 	go func() {
 		if y-1 >= 0 {
-			out <- f.width*(y-1) + x
+			out <- site(f.width)*(y-1) + x
 		}
 		if x-1 >= 0 {
-			out <- f.width*y + x - 1
+			out <- site(f.width)*y + x - 1
 		}
-		if x+1 < f.width {
-			out <- f.width*y + x + 1
+		if x+1 < site(f.width) {
+			out <- site(f.width)*y + x + 1
 		}
-		if y+1 < f.height {
-			out <- f.width*(y+1) + x
+		if y+1 < site(f.height) {
+			out <- site(f.width)*(y+1) + x
 		}
 		close(out)
 	}()
 	return out
 }
 
-func (f *field) reservoir(s int) []int {
-	var res []int
-	visited := make(map[int]bool)
-	frontier := []int{s}
+func (f *field) reservoir(s site) []site {
+	var res []site
+	visited := make(map[site]bool)
+	frontier := []site{s}
 	for len(frontier) > 0 {
 		cur := frontier[len(frontier)-1]
 		frontier = frontier[:len(frontier)-1]
