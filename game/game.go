@@ -29,11 +29,11 @@ type game struct {
 	week       int
 	deeds      map[int]*deed
 	price      int
-	surveyTurn int
+	surveyTurn entity
 }
 
 type deed struct {
-	player int
+	player entity
 	week   int
 	stop   int
 	bit    int
@@ -150,12 +150,12 @@ func play(g *game) stateFn {
 	var wg sync.WaitGroup
 	wg.Add(len(g.players))
 	for p := 0; p < len(g.players); p++ {
-		go func(playerID int) {
+		go func(playerID entity) {
 			defer wg.Done()
 			for state := survey; state != nil; {
 				state = state(g, playerID)
 			}
-		}(p)
+		}(entity(p))
 	}
 	wg.Wait()
 	close(stop)

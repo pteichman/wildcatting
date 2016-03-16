@@ -90,7 +90,7 @@ func TestGame(t *testing.T) {
 		for p, s := range tw.surveys {
 			g.Move(p, s)
 			deed := g.deeds[s]
-			if deed.player != p {
+			if deed.player != entity(p) {
 				t.Errorf("surveying (week %d player %d site %d): expect owner %d; got %d", g.week, p, s, p, deed.player)
 			}
 		}

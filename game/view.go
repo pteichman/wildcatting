@@ -15,7 +15,7 @@ func lobbyView(g *game) View {
 	for p := range g.players {
 		pnl := 0
 		for _, deed := range g.deeds {
-			if deed.player != p {
+			if deed.player != entity(p) {
 				continue
 			}
 			pnl += deed.pnl
@@ -37,9 +37,9 @@ func playView(g *game) View {
 	}{"play", g.week}
 }
 
-type playerViewFn func(*game, int) View
+type playerViewFn func(*game, entity) View
 
-func surveyView(g *game, playerID int) View {
+func surveyView(g *game, playerID entity) View {
 	return struct {
 		Name  string `json:"name"`
 		Week  int    `json:"week"`
@@ -52,7 +52,7 @@ func surveyView(g *game, playerID int) View {
 	}{"survey", g.week, g.price, g.f.prob, g.f.cost, g.f.tax, g.f.oil, facts[rand.Intn(len(facts))]}
 }
 
-func reportView(g *game, playerID, siteID int) View {
+func reportView(g *game, playerID entity, siteID int) View {
 	return struct {
 		Name string `json:"name"`
 		Site int    `json:"site"`
@@ -63,7 +63,7 @@ func reportView(g *game, playerID, siteID int) View {
 }
 
 func drillView(siteID int) playerViewFn {
-	return func(g *game, playerID int) View {
+	return func(g *game, playerID entity) View {
 		depth := g.deeds[siteID].bit * 100
 		cost := g.deeds[siteID].bit * g.f.cost[siteID]
 		return struct {
@@ -85,7 +85,7 @@ type well struct {
 	PNL    int  `json:"pnl"`
 }
 
-func wellsView(g *game, playerID int) View {
+func wellsView(g *game, playerID entity) View {
 	wells := make([]well, g.week)
 	for s, deed := range g.deeds {
 		if deed.player != playerID {
@@ -123,7 +123,7 @@ func wellsView(g *game, playerID int) View {
 	return state
 }
 
-func scoreView(g *game, playerID int) View {
+func scoreView(g *game, playerID entity) View {
 	return struct {
 		Name string `json:"name"`
 	}{"score"}

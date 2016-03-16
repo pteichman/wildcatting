@@ -11,9 +11,9 @@ const (
 // a playFn represent's the players gameplay state within a week.
 // calling the function transitions the state based on incoming
 // player moves. it returns the playFn for the next state transition.
-type playFn func(*game, int) playFn
+type playFn func(*game, entity) playFn
 
-func survey(g *game, playerID int) playFn {
+func survey(g *game, playerID entity) playFn {
 	log.Printf("player %d survey state", playerID)
 	var move int
 
@@ -37,14 +37,14 @@ Loop:
 
 	log.Printf("player %d surveying site %d", playerID, move)
 	g.deeds[move] = &deed{player: playerID, week: g.week}
-	g.surveyTurn = (g.surveyTurn + 1) % len(g.players)
+	g.surveyTurn = entity((int(g.surveyTurn) + 1) % len(g.players))
 
 	return report(move)
 }
 
 func report(siteID int) playFn {
 	// return this player's function for surveyor's report at specific site
-	return func(g *game, playerID int) playFn {
+	return func(g *game, playerID entity) playFn {
 		log.Printf("player %d report state @ site %d", playerID, siteID)
 		var move int
 		for {
@@ -67,7 +67,7 @@ func drill(siteID int) playFn {
 	view := drillView(siteID)
 
 	// return this player's function for drilling a specific site
-	return func(g *game, playerID int) playFn {
+	return func(g *game, playerID entity) playFn {
 		log.Printf("player %d drill state @ site %d", playerID, siteID)
 		oil := g.f.oil[siteID]
 		deed := g.deeds[siteID]
@@ -96,7 +96,7 @@ func drill(siteID int) playFn {
 	}
 }
 
-func wells(g *game, playerID int) playFn {
+func wells(g *game, playerID entity) playFn {
 	log.Printf("player %d wells state", playerID)
 Loop:
 	for {
