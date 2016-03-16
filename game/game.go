@@ -22,9 +22,9 @@ type game struct {
 	players    []string
 	join       chan string
 	joinID     chan int
-	move       []chan int
+	move       map[entity]chan int
 	status     chan View
-	view       []chan View
+	view       map[entity]chan View
 	f          *field
 	week       int
 	deeds      map[int]*deed
@@ -48,6 +48,8 @@ func New() Game {
 		f:      newField(24, 80),
 		join:   make(chan string),
 		joinID: make(chan int),
+		move:   make(map[entity]chan int),
+		view:   make(map[entity]chan View),
 		status: make(chan View),
 		deeds:  make(map[int]*deed),
 	}
@@ -72,14 +74,14 @@ func (g *game) Join(name string) int {
 
 func (g *game) Move(playerID, move int) View {
 	stats.Add("Moved", 1)
-	g.move[playerID] <- move
-	return <-g.view[playerID]
+	g.move[entity(playerID)] <- move
+	return <-g.view[entity(playerID)]
 }
 
 // View returns a JSON serializable object representing the player's current game state.
 func (g *game) View(playerID int) View {
 	stats.Add("Viewed", 1)
-	return <-g.view[playerID]
+	return <-g.view[entity(playerID)]
 }
 
 // State returns the high-level state of the game: who has joined and has it started.
@@ -116,8 +118,8 @@ Loop:
 		case name := <-g.join:
 			playerID := len(g.players)
 			g.players = append(g.players, name)
-			g.move = append(g.move, make(chan int))
-			g.view = append(g.view, make(chan View))
+			g.move[entity(playerID)] = make(chan int)
+			g.view[entity(playerID)] = make(chan View)
 			g.joinID <- playerID
 			log.Printf("name %s joined as player %d", name, playerID)
 		case <-start:
