@@ -22,8 +22,8 @@ Loop:
 		select {
 		case g.view[playerID] <- surveyView(g, playerID):
 		case move = <-g.move[playerID]:
-			if playerID != g.surveyTurn {
-				log.Printf("waiting for player %d to survey; ignoring player %d", g.surveyTurn, playerID)
+			if !g.world.CanSurvey(playerID) {
+				log.Printf("player %d cannot survey", playerID)
 				break
 			}
 
@@ -37,8 +37,7 @@ Loop:
 
 	log.Printf("player %d surveying site %d", playerID, move)
 	g.deeds[move] = &deed{player: playerID, week: g.week}
-	g.surveyTurn = next(g.world.Players(), g.surveyTurn)
-	log.Printf("next player: %v", g.surveyTurn)
+	g.world.SetCanSurvey(playerID, false)
 
 	return report(move)
 }

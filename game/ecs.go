@@ -6,6 +6,7 @@ type world struct {
 	entities
 	nameManager
 	playerManager
+	surveyManager
 }
 
 type entity uint32
@@ -45,6 +46,28 @@ func (m *playerManager) PlayerOne() entity {
 
 func (m *playerManager) Players() []entity {
 	return m.players
+}
+
+// surveyManager tracks which players may survey.
+type surveyManager struct {
+	index  []entity
+	values []bool
+}
+
+func (m *surveyManager) CanSurvey(e entity) bool {
+	if i, ok := linfind(m.index, e); ok {
+		return m.values[i]
+	}
+	return false
+}
+
+func (m *surveyManager) SetCanSurvey(e entity, v bool) {
+	if i, ok := linfind(m.index, e); ok {
+		m.values[i] = v
+		return
+	}
+	m.index = append(m.index, e)
+	m.values = append(m.values, v)
 }
 
 type nameManager struct {

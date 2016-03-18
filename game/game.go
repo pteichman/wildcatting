@@ -21,17 +21,16 @@ type Game interface {
 type site int
 
 type game struct {
-	world      world
-	join       chan string
-	joinID     chan entity
-	move       map[entity]chan site
-	status     chan View
-	view       map[entity]chan View
-	f          *field
-	week       int
-	deeds      map[site]*deed
-	price      int
-	surveyTurn entity
+	world  world
+	join   chan string
+	joinID chan entity
+	move   map[entity]chan site
+	status chan View
+	view   map[entity]chan View
+	f      *field
+	week   int
+	deeds  map[site]*deed
+	price  int
 }
 
 type deed struct {
@@ -116,7 +115,6 @@ Loop:
 		playerOne := g.world.PlayerOne()
 		if playerOne != none {
 			start = g.move[playerOne]
-			g.surveyTurn = playerOne
 		}
 
 		select {
@@ -124,6 +122,7 @@ Loop:
 			playerID := g.world.NewEntity()
 			g.world.AddPlayer(playerID)
 			g.world.SetName(playerID, name)
+			g.world.SetCanSurvey(playerID, true)
 			g.move[playerID] = make(chan site)
 			g.view[playerID] = make(chan View)
 			g.joinID <- playerID
@@ -206,5 +205,9 @@ func (g *game) nextWeek() {
 
 		d.output = output
 		d.pnl += int(float64(d.output*g.price)/100) - g.f.tax[s]
+	}
+
+	for _, player := range g.world.Players() {
+		g.world.SetCanSurvey(player, true)
 	}
 }
