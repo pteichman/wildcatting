@@ -58,7 +58,7 @@ func TestPlayerManager(t *testing.T) {
 	var m playerManager
 	assertEqual(false, m.IsPlayer(foo))
 	assertEqual(false, m.IsPlayer(bar))
-	assertEqual(None, m.PlayerOne())
+	assertEqual(none, m.PlayerOne())
 
 	m.AddPlayer(foo)
 	assertEqual(true, m.IsPlayer(foo))

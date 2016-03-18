@@ -10,7 +10,7 @@ type world struct {
 
 type entity uint32
 
-var None entity = 0
+var none entity = 0
 
 type entities struct {
 	prev uint32
@@ -40,7 +40,7 @@ func (m *playerManager) PlayerOne() entity {
 	if len(m.players) > 0 {
 		return m.players[0]
 	}
-	return None
+	return none
 }
 
 func (m *playerManager) Players() []entity {

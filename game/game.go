@@ -114,7 +114,7 @@ Loop:
 	for {
 		// player 0 is the owner and her first move is the start signal
 		playerOne := g.world.PlayerOne()
-		if playerOne != None {
+		if playerOne != none {
 			start = g.move[playerOne]
 			g.surveyTurn = playerOne
 		}
