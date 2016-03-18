@@ -11,8 +11,6 @@ type world struct {
 
 type entity uint32
 
-var none entity = 0
-
 type entities struct {
 	prev uint32
 }
@@ -35,13 +33,6 @@ func (m *playerManager) AddPlayer(e entity) {
 func (m *playerManager) IsPlayer(e entity) bool {
 	_, ok := linfind(m.players, e)
 	return ok
-}
-
-func (m *playerManager) PlayerOne() entity {
-	if len(m.players) > 0 {
-		return m.players[0]
-	}
-	return none
 }
 
 func (m *playerManager) Players() []entity {
