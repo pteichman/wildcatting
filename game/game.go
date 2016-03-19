@@ -121,7 +121,7 @@ Loop:
 			playerID := g.world.NewEntity()
 			g.world.AddPlayer(playerID)
 			g.world.SetName(playerID, name)
-			g.world.SetCanSurvey(playerID, true)
+			g.world.SetSurveyor(playerID)
 			g.move[playerID] = make(chan site)
 			g.view[playerID] = make(chan View)
 			g.joinID <- playerID
@@ -207,6 +207,6 @@ func (g *game) nextWeek() {
 	}
 
 	for _, player := range g.world.Players() {
-		g.world.SetCanSurvey(player, true)
+		g.world.SetSurveyor(player)
 	}
 }

@@ -38,8 +38,8 @@ func TestNameManager(t *testing.T) {
 	assertEqual("foo", m.Name(foo))
 	assertEqual("bar", m.Name(bar))
 
-	m.DelName(foo)
-	m.DelName(bar)
+	m.ClearName(foo)
+	m.ClearName(bar)
 	assertEqual("", m.Name(foo))
 	assertEqual("", m.Name(bar))
 }

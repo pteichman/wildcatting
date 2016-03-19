@@ -6,7 +6,7 @@ type world struct {
 	entities
 	nameManager
 	playerManager
-	surveyManager
+	surveyorManager
 }
 
 type entity uint32
@@ -39,26 +39,29 @@ func (m *playerManager) Players() []entity {
 	return m.players
 }
 
-// surveyManager tracks which players may survey.
-type surveyManager struct {
+// surveyorManager tracks which players may survey.
+type surveyorManager struct {
 	index  []entity
-	values []bool
 }
 
-func (m *surveyManager) CanSurvey(e entity) bool {
-	if i, ok := linfind(m.index, e); ok {
-		return m.values[i]
-	}
-	return false
+func (m *surveyorManager) IsSurveyor(e entity) bool {
+	_, ok := linfind(m.index, e)
+	return ok
 }
 
-func (m *surveyManager) SetCanSurvey(e entity, v bool) {
-	if i, ok := linfind(m.index, e); ok {
-		m.values[i] = v
+func (m *surveyorManager) SetSurveyor(e entity) {
+	if _, ok := linfind(m.index, e); ok {
 		return
 	}
 	m.index = append(m.index, e)
-	m.values = append(m.values, v)
+}
+
+func (m *surveyorManager) ClearSurveyor(e entity) {
+	if i, ok := linfind(m.index, e); ok {
+		last := len(m.index) - 1
+		m.index[i] = m.index[last]
+		m.index = m.index[:last]
+	}
 }
 
 type nameManager struct {
@@ -82,12 +85,11 @@ func (m *nameManager) Name(e entity) string {
 	return ""
 }
 
-func (m *nameManager) DelName(e entity) {
+func (m *nameManager) ClearName(e entity) {
 	if i, ok := linfind(m.index, e); ok {
-		// Swap the deleted entity with the last entity, then reslice.
 		last := len(m.names) - 1
-		m.names[i], m.names[last] = m.names[last], m.names[i]
-		m.index[i], m.index[last] = m.index[last], m.index[i]
+		m.names[i] = m.names[last]
+		m.index[i] = m.index[last]
 		m.names = m.names[:last]
 		m.index = m.index[:last]
 	}
